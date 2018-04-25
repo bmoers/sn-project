@@ -1,0 +1,46 @@
+{
+  "name": "sn-project",
+  "version": "1.0.0",
+  "description": "Replicate records from Service-Now to disc.",
+  "main": "index.js",
+  "scripts": {
+    "test": "exit 0"
+  },
+  "author": "Boris Moers",
+  "license": "LGPL-3.0",
+  "dependencies": {
+    "bluebird": "3.5.1",
+    "delete-empty": "2.0.0",
+    "fs-extra": "5.0.0",
+    "mkdirp": "0.5.1",
+    "nedb": "1.8.0",
+    "object-assign-deep": "0.4.0",
+    "recursive-copy": "2.0.9",
+    "sanitize-filename": "1.6.1",
+    "chai": "^3.5.0",
+    "eslint-detailed-reporter": "0.7.3",
+    "gulp": "3.9.1",
+    "gulp-eslint": "4.0.2",
+    "gulp-jsdoc3": "1.0.1",
+    "gulp-mocha": "5.0.0",
+    "mocha": "^2.4.5",
+    "mochawesome": "3.0.2",
+    "sn-rest-client": "github:bmoers/sn-rest-client"
+  },
+  "directories": {
+    "lib": "lib"
+  },
+  "devDependencies": {},
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/bmoers/sn-project.git"
+  },
+  "keywords": [
+    "Service-Now",
+    "CICD"
+  ],
+  "bugs": {
+    "url": "https://github.com/bmoers/sn-project/issues"
+  },
+  "homepage": "https://github.com/bmoers/sn-project#readme"
+}

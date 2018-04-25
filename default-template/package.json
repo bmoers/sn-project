@@ -1,0 +1,21 @@
+{
+  "name": "@companyname/appname",
+  "version": "1.0.0",
+  "devDependencies": {
+    "bluebird": "3.4.7",
+    "chai": "^3.5.0",
+    "eslint-detailed-reporter": "0.7.3",
+    "gulp": "3.9.1",
+    "gulp-eslint": "4.0.2",
+    "gulp-jsdoc3": "1.0.1",
+    "gulp-mocha": "5.0.0",
+    "mkdirp": "0.5.1",
+    "mocha": "^2.4.5",
+    "mochawesome": "3.0.2",
+    "sn-rest-client": "bmoers/sn-rest-client"
+  },
+  "scripts": {
+    "build": "gulp",
+    "test": "gulp test"
+  }
+}

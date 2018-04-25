@@ -1,0 +1,17 @@
+{
+    "atf": {
+        "suites": [],
+        "tests": []
+    },
+    "lint": [
+        "*/**/*.js"
+    ],
+    "build": {
+        "mode": "",
+        "sequence": 0
+    },
+    "application": {
+        "id": "00000000000000000000000000000000",
+        "name": "dummy"
+    }
+}

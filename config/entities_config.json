@@ -1,0 +1,1054 @@
+{
+    "bsm_action": {
+        "name": "BSM Map Actions"
+    },
+    "bsm_chart": {
+        "name": "BSM Saved View",
+        "key": "ci",
+        "fields": {
+            "chart": ".js"
+        }
+    },
+    "catalog_script_client": {
+        "name": "Catalog Client Script",
+        "key": "name",
+        "fields": {
+            "script": ".js"
+        },
+        "subDirPattern": "<applies_to>/<cat_item!dv|variable_set!dv>/<type>/<cat_variable?>"
+    },
+    "cert_instance": {
+        "name": "Certification Instance",
+        "key": "number",
+        "fields": {
+            "instructions": ".xhtml"
+        },
+        "subDirPattern": null
+    },
+    "cert_schedule": {
+        "name": "Recertification Schedule",
+        "key": "name",
+        "fields": {
+            "instructions": ".xhtml"
+        },
+        "subDirPattern": null
+    },
+    "ci_identifier": {
+        "name": "CI Identifier",
+        "key": "name",
+        "fields": {
+            "script": ".js"
+        },
+        "subDirPattern": null
+    },
+    "clone_cleanup_script": {
+        "name": "Clone Cleanup Script",
+        "key": "name",
+        "fields": {
+            "script": ".js"
+        },
+        "subDirPattern": null
+    },
+    "cmdb_sw_license_calculation": {
+        "name": "Software License Calculation",
+        "key": "full_name",
+        "fields": {
+            "calculation": ".js"
+        }
+    },
+    "cmn_map_page": {
+        "name": "Map Page",
+        "key": "name",
+        "fields": {
+            "script": ".js"
+        }
+    },
+    "cmn_relative_duration": {
+        "name": "Relative Duration",
+        "key": "name",
+        "fields": {
+            "script": ".js"
+        },
+        "subDirPattern": null
+    },
+    "cmn_schedule_page": {
+        "name": "Schedule Page",
+        "key": "sys_name",
+        "fields": {
+            "client_script": ".js",
+            "server_script": ".js",
+            "header_html": ".xhtml"
+        }
+    },
+    "content_block": {
+        "name": "Content Block",
+        "key": "sys_name",
+        "alias": [
+            "content_block_programmatic",
+            "content_block_lists",
+            "content_block_menu",
+            "content_block_sized",
+            "content_block_flash",
+            "content_block_iframe",
+            "content_block_open_header",
+            "content_block_header",
+            "content_block_static",
+            "content_block_detail"
+        ],
+        "fields": {
+            "condition": ".js"
+        }
+    },
+    "content_block_detail": {
+        "name": "Detailed Content",
+        "key": "name",
+        "fields": {
+            "script": ".js"
+        },
+        "subDirPattern": null
+    },
+    "content_block_lists": {
+        "name": "List of Content",
+        "key": "name",
+        "fields": {
+            "script": ".js"
+        },
+        "subDirPattern": null
+    },
+    "content_block_programmatic": {
+        "name": "Dynamic Content",
+        "key": "name",
+        "fields": {
+            "programmatic_content": ".xhtml"
+        }
+    },
+    "content_block_static": {
+        "name": "Static Content",
+        "key": "name",
+        "fields": {
+            "static_content": ".xhtml"
+        },
+        "subDirPattern": null
+    },
+    "content_page_rule": {
+        "name": "Login Rule",
+        "key": "name",
+        "fields": {
+            "advanced_condition": ".js"
+        }
+    },
+    "content_type_detail": {
+        "name": "Detail Pages",
+        "key": "condition",
+        "fields": {
+            "script": ".js"
+        },
+        "subDirPattern": null
+    },
+    "cool_thing": {
+        "name": "Cool Thing",
+        "key": "number",
+        "fields": {
+            "text": ".xhtml"
+        },
+        "subDirPattern": null
+    },
+    "cxs_table_config": {
+        "name": "Table Configuration",
+        "key": "name",
+        "fields": {
+            "search_as_script": ".js"
+        },
+        "subDirPattern": null
+    },
+    "discovery_port_probe": {
+        "name": "Discovery Port Probe",
+        "key": "name",
+        "fields": {
+            "script": ".js"
+        },
+        "subDirPattern": null
+    },
+    "ecc_agent_capability_value_test": {
+        "name": "MID Server Capability Value Test",
+        "key": "capability",
+        "fields": {
+            "script": ".js"
+        },
+        "subDirPattern": null
+    },
+    "ecc_agent_script": {
+        "name": "MID Server Script",
+        "key": "name",
+        "fields": {
+            "script": ".js"
+        },
+        "subDirPattern": null
+    },
+    "ecc_agent_script_include": {
+        "name": "MID Server Script Include",
+        "key": "name",
+        "fields": {
+            "script": ".js"
+        },
+        "subDirPattern": null
+    },
+    "expert_panel_template": {
+        "name": "Record Generator",
+        "key": "name",
+        "fields": {
+            "script": ".js"
+        },
+        "subDirPattern": null
+    },
+    "expert_panel_transition": {
+        "name": "Wizard Panel Transition",
+        "key": "order",
+        "fields": {
+            "transition_script": ".js"
+        },
+        "subDirPattern": null
+    },
+    "expert_script_client": {
+        "name": "Wizard Client Script",
+        "key": "name",
+        "fields": {
+            "script": ".js"
+        },
+        "subDirPattern": "<expert>/<expert_panel>/<type>/<expert_panel_variable?>"
+    },
+    "gsw_content_information": {
+        "name": "Guided Setup Information",
+        "key": "title",
+        "fields": {
+            "article": ".xhtml"
+        },
+        "subDirPattern": null
+    },
+    "kb_navons": {
+        "name": "Knowledge Nav-ons"
+    },
+    "live_table_notification": {
+        "name": "Live Table Notification",
+        "key": "sys_name",
+        "fields": {
+            "before_script": ".js",
+            "message": ".js"
+        },
+        "subDirPattern": "<table!dv>"
+    },
+    "menu_section": {
+        "name": "Menu Section",
+        "key": "name",
+        "fields": {
+            "footer": ".xhtml",
+            "header": ".xhtml"
+        },
+        "subDirPattern": null
+    },
+    "metric_definition": {
+        "name": "Metric Definition",
+        "key": "name",
+        "fields": {
+            "script": ".js"
+        },
+        "subDirPattern": null
+    },
+    "pa_scripts": {
+        "name": "Script",
+        "key": "name",
+        "fields": {
+            "script": ".js"
+        },
+        "subDirPattern": null
+    },
+    "packages_call_item": {
+        "name": "",
+        "key": "",
+        "fields": {
+            "after": ".js"
+        }
+    },
+    "pc_vendor_cat_item": {
+        "name": "Vendor Catalog Item",
+        "key": "name",
+        "fields": {
+            "description": ".xhtml"
+        },
+        "subDirPattern": null
+    },
+    "process_guide": {
+        "name": "Process Guides",
+        "key": "name",
+        "fields": {
+            "advanced_condition": ".js"
+        }
+    },
+    "process_step_approval": {
+        "name": "Approval Steps",
+        "key": "name",
+        "fields": {
+            "approver_script": ".js",
+            "approval_script": ".js",
+            "rejection_script": ".js"
+        },
+        "subDirPattern": "<process_guide!dv>"
+    },
+    "sc_cat_item_dt_approval": {
+        "name": "Execution Plan Approval Task",
+        "key": "name",
+        "fields": {
+            "approval_script": ".js"
+        },
+        "subDirPattern": "<delivery_plan!dv>"
+    },
+    "sc_cat_item_guide": {
+        "name": "Order guide",
+        "key": "name",
+        "fields": {
+            "script": ".js",
+            "validator": ".js"
+        },
+        "subDirPattern": null
+    },
+    "sc_cat_item_option": {
+        "name": "Item Option",
+        "key": "name",
+        "fields": {
+            "description": ".xhtml"
+        },
+        "subDirPattern": null
+    },
+    "sc_ic_aprvl_type_defn": {
+        "name": "Approval Type Definition",
+        "key": "name",
+        "fields": {
+            "approver_script": ".js"
+        },
+        "subDirPattern": "<sc_ic_aprvl_type_defn_staging!dv>"
+    },
+    "sc_ic_aprvl_type_defn_staging": {
+        "name": "Approval Type",
+        "key": "name",
+        "fields": {
+            "approver_script": ".js"
+        },
+        "subDirPattern": "<sc_ic_aprvl_type_defn!dv>"
+    },
+    "sc_ic_item_staging": {
+        "name": "Item",
+        "key": "name",
+        "fields": {
+            "description": ".xhtml"
+        },
+        "subDirPattern": null
+    },
+    "sc_ic_task_assign_defn": {
+        "name": "Task Assignment Definition",
+        "key": "name",
+        "fields": {
+            "assignment_script": ".js"
+        },
+        "subDirPattern": "<sc_ic_task_assign_defn_staging!dv>"
+    },
+    "sc_ic_task_assign_defn_staging": {
+        "name": "Task Assignment",
+        "key": "name",
+        "fields": {
+            "assignment_script": ".js"
+        },
+        "subDirPattern": "<sc_ic_task_assign_defn!dv>"
+    },
+    "scheduled_data_export": {
+        "name": "Scheduled Data Export",
+        "key": "name",
+        "fields": {
+            "post_script": ".js",
+            "pre_script": ".js"
+        },
+        "subDirPattern": null
+    },
+    "service_scope": {
+        "name": "Service Scope",
+        "key": "name",
+        "fields": {
+            "description": ".xhtml"
+        },
+        "subDirPattern": null
+    },
+    "sf_sm_order": {
+        "name": "Service Order Flow",
+        "key": "name",
+        "fields": {
+            "auto_script_script": ".js",
+            "ui_action_script": ".js"
+        },
+        "subDirPattern": null
+    },
+    "sf_sm_task": {
+        "name": "Service Task/Order Flow",
+        "alias": [
+            "sf_sm_order"
+        ],
+        "key": "sys_name",
+        "fields": {
+            "auto_script_script": ".js",
+            "ui_action_script": ".js"
+        },
+        "subDirPattern": "<sys_class_name>/<table!dv>"
+    },
+    "sf_state_flow": {
+        "name": "State Flow",
+        "alias": [
+            "sf_sm_flow",
+            "sf_sm_task",
+            "sn_sm_legal_sf_task",
+            "x_swre_sourcing_sf_task",
+            "sf_hr_task",
+            "sf_hr_case",
+            "sf_sm_order",
+            "x_swre_sourcing_sf_request",
+            "x_swre_comms_ticke_sfting_task",
+            "x_swre_comms_ticke_sfting_request",
+            "sn_sm_legal_sf_request"
+        ],
+        "key": "sys_name",
+        "fields": {
+            "automatic_script": ".js",
+            "automatic_string": ".js",
+            "manual_script": ".js",
+            "manual_string": ".js"
+        },
+        "subDirPattern": "<sys_class_name>/<table!dv>"
+    },
+    "sp_angular_provider": {
+        "name": "Widget Angular Provider",
+        "key": "name",
+        "fields": {
+            "script": ".js"
+        },
+        "subDirPattern": null
+    },
+    "sp_ng_template": {
+        "name": "Angular ng-template",
+        "key": "id",
+        "fields": {
+            "template": ".xhtml"
+        },
+        "subDirPattern": null
+    },
+    "sp_portal": {
+        "name": "Service Portal",
+        "key": "title",
+        "fields": {
+            "quick_start_config": ".js"
+        },
+        "subDirPattern": null
+    },
+    "sp_rectangle_menu_item": {
+        "name": "Menu Item",
+        "key": "label",
+        "fields": {
+            "record_script": ".js"
+        },
+        "subDirPattern": null
+    },
+    "sp_widget": {
+        "name": "Widget",
+        "key": "name",
+        "fields": {
+            "client_script": ".js",
+            "link": ".js",
+            "script": ".js",
+            "template": ".xhtml"
+        },
+        "subDirPattern": "<data_table>"
+    },
+    "survey_master": {
+        "name": "Survey",
+        "key": "name",
+        "fields": {
+            "end_note": ".xhtml",
+            "introduction": ".xhtml"
+        },
+        "subDirPattern": null
+    },
+    "sys_amb_processor": {
+        "name": "AMB Message Processor",
+        "key": "sys_name",
+        "fields": {
+            "channel_create_advanced_authorization": ".js",
+            "channel_subscribe_advanced_authorization": ".js",
+            "message_receive_advanced_authorization": ".js",
+            "message_receive_listener": ".js",
+            "message_send_advanced_authorization": ".js",
+            "message_send_listener": ".js",
+            "user_subscribe_listener": ".js",
+            "user_unsubscribe_listener": ".js"
+        }
+    },
+    "sys_dictionary": {
+        "name": "Dictionary Entry",
+        "key": "<element|name>",
+        "fields": {
+            "dynamic_creation_script": ".js",
+            "calculation": ".js"
+        },
+        "fieldsDisabled" : {
+            "default_value": ".js"
+        },
+        "subDirPattern": "<name>"
+    },
+    "sys_home": {
+        "name": "Welcome Page Section",
+        "key": "short_description",
+        "fields": {
+            "text": ".xhtml"
+        },
+        "subDirPattern": null
+    },
+    "sys_impex_entry": {
+        "name": "Field Map",
+        "key": "name",
+        "fields": {
+            "script": ".js"
+        },
+        "subDirPattern": null
+    },
+    "sys_impex_map": {
+        "name": "Import Export Map",
+        "key": "name",
+        "fields": {
+            "script": ".js"
+        },
+        "subDirPattern": null
+    },
+    "sys_installation_exit": {
+        "name": "Installation Exit",
+        "key": "name",
+        "fields": {
+            "script": ".js"
+        },
+        "subDirPattern": null
+    },
+    "sys_listener_detail": {
+        "name": "Sys listener detail",
+        "key": "sys_name",
+        "fields": {
+            "script": ".js"
+        },
+        "subDirPattern": null
+    },
+    "sys_nav_link": {
+        "name": "Navigation Link",
+        "key": "name",
+        "fields": {
+            "text_script": ".js",
+            "url_script": ".js"
+        },
+        "subDirPattern": null
+    },
+    "sys_navigator": {
+        "name": "Navigation Handler",
+        "key": "table",
+        "fields": {
+            "script": ".js"
+        },
+        "subDirPattern": null
+    },
+    "sys_process_flow": {
+        "name": "Flow Formatter",
+        "key": "name",
+        "fields": {
+            "description": ".xhtml"
+        },
+        "subDirPattern": null
+    },
+    "sys_processor": {
+        "name": "Processor",
+        "key": "name",
+        "fields": {
+            "script": ".js"
+        }
+    },
+    "sys_properties_category": {
+        "name": "System Property Category",
+        "key": "name",
+        "fields": {
+            "title": ".xhtml"
+        },
+        "subDirPattern": null
+    },
+    "sys_push_notif_act_script": {
+        "name": "Push Notification Action",
+        "key": "name",
+        "fields": {
+            "script": ".js"
+        },
+        "subDirPattern": null
+    },
+    "sys_push_notif_msg_content": {
+        "name": "Push Notification Message Content",
+        "key": "name",
+        "fields": {
+            "script": ".js"
+        },
+        "subDirPattern": null
+    },
+    "sys_relationship": {
+        "name": "Relationship",
+        "key": "name",
+        "fields": {
+            "query_with": ".js",
+            "query_from": ".js",
+            "apply_to": ".js",
+            "insert_callback": ".js"
+        },
+        "subDirPattern": "<basic_apply_to|'--none--'>"
+    },
+    "sys_report_custom_chart": {
+        "name": "Custom Chart",
+        "key": "name",
+        "fields": {
+            "render_script": ".js"
+        },
+        "subDirPattern": null
+    },
+    "sys_script": {
+        "name": "Business Rule",
+        "key": "name",
+        "fields": {
+            "script": ".js",
+            "message": ".js"
+        },
+        "subDirPattern": "<collection>/<when!dv>"
+    },
+    "sys_script_ajax": {
+        "name": "AJAX Script",
+        "key": "name",
+        "fields": {
+            "script": ".js"
+        },
+        "subDirPattern": null
+    },
+    "sys_script_client": {
+        "name": "Client Script",
+        "key": "name",
+        "fields": {
+            "script": ".js"
+        },
+        "subDirPattern": "<table>/<type>/<field>"
+    },
+    "sys_script_email": {
+        "name": "Email Script",
+        "key": "name",
+        "fields": {
+            "script": ".js"
+        },
+        "subDirPattern": null
+    },
+    "sys_script_fix": {
+        "name": "Fix Script",
+        "key": "name",
+        "fields": {
+            "script": ".js"
+        },
+        "subDirPattern": null
+    },
+    "sys_script_include": {
+        "name": "Script Include",
+        "key": "api_name",
+        "fields": {
+            "script": ".js"
+        },
+        "subDirPattern": null
+    },
+    "sys_script_validator": {
+        "name": "Validation Script",
+        "key": "internal_type",
+        "fields": {
+            "validator": ".js"
+        },
+        "subDirPattern": null
+    },
+    "sys_security_acl": {
+        "name": "Access Control",
+        "key": "operation",
+        "fields": {
+            "script": ".js"
+        },
+        "subDirPattern": "<name>"
+    },
+    "sys_service_api": {
+        "name": "Service API",
+        "key": "name",
+        "fields": {
+            "script": ".js"
+        },
+        "subDirPattern": null
+    },
+    "sys_soap_message": {
+        "name": "SOAP Message",
+        "key": "name",
+        "fields": {
+            "wsdl_xml": ".xhtml"
+        },
+        "subDirPattern": null
+    },
+    "sys_soap_message_function": {
+        "name": "SOAP Message Function",
+        "key": "function_name",
+        "fields": {
+            "envelope": ".xhtml"
+        },
+        "subDirPattern": null
+    },
+    "sys_transform_map": {
+        "name": "Table Transform Map",
+        "key": "name",
+        "fields": {
+            "script": ".js"
+        }
+    },
+    "sys_transform_script": {
+        "name": "Transform Script",
+        "key": "when",
+        "fields": {
+            "script": ".js"
+        },
+        "subDirPattern": "<map!dv>/<order>"
+    },
+    "sys_trigger": {
+        "name": "Schedule Item"
+    },
+    "sys_ui_action": {
+        "name": "UI Action",
+        "key": "name",
+        "fields": {
+            "script": ".js"
+        },
+        "subDirPattern": "<table>"
+    },
+    "sys_ui_context_menu": {
+        "name": "Context Menu",
+        "key": "name",
+        "fields": {
+            "action_script": ".js",
+            "dynamic_actions_script": ".js",
+            "on_show_script": ".js"
+        }
+    },
+    "sys_ui_list_control": {
+        "name": "List Control",
+        "key": "<related_list|name>",
+        "fields": {
+            "columns_condition": ".js",
+            "edit_condition": ".js",
+            "empty_condition": ".js",
+            "filter_condition": ".js",
+            "link_condition": ".js",
+            "new_condition": ".js"
+        }
+    },
+    "sys_ui_list_control_embedded": {
+        "name": "Embedded List Control",
+        "key": "<related_list|name>",
+        "fields": {
+            "columns_condition": ".js",
+            "empty_condition": ".js",
+            "link_condition": ".js",
+            "new_condition": ".js"
+        }
+    },
+    "sys_ui_list_script_client": {
+        "name": "List Client Script",
+        "key": "name",
+        "fields": {
+            "script": ".js"
+        },
+        "subDirPattern": null
+    },
+    "sys_ui_list_script_server": {
+        "name": "List Server Script",
+        "key": "name",
+        "fields": {
+            "script": ".js"
+        },
+        "subDirPattern": null
+    },
+    "sys_ui_macro": {
+        "name": "Macro",
+        "key": "name",
+        "fields": {
+            "xml": ".xhtml"
+        },
+        "subDirPattern": null
+    },
+    "sys_ui_ng_action": {
+        "name": "UI Action - Mobile",
+        "key": "name",
+        "fields": {
+            "script": ".js"
+        },
+        "subDirPattern": null
+    },
+    "sys_ui_page": {
+        "name": "UI Page",
+        "key": "name",
+        "fields": {
+            "html": ".xhtml",
+            "client_script": ".js",
+            "processing_script": ".js"
+        },
+        "subDirPattern": "<category|'--none--'>"
+    },
+    "sys_ui_policy": {
+        "name": "UI Policy",
+        "key": "short_description",
+        "fields": {
+            "script_true": ".js",
+            "script_false": ".js"
+        },
+        "subDirPattern": "<table>"
+    },
+    "sys_ui_script": {
+        "name": "UI Script",
+        "key": "name",
+        "fields": {
+            "script": ".js"
+        }
+    },
+    "sys_ui_style": {
+        "name": "Style",
+        "key": "element",
+        "fields": {
+            "value": ".js"
+        },
+        "subDirPattern": "<name>"
+    },
+    "sys_ui_title": {
+        "name": "Document Title",
+        "key": "table",
+        "fields": {
+            "script": ".js"
+        },
+        "subDirPattern": null
+    },
+    "sys_variable_value": {
+        "name": "Values",
+        "key": "<document_key!dv>",
+        "query": "variable.internal_type=script^ORvariable.internal_type=script_plain^ORvariable.internal_type=script_server",
+        "fields": {
+            "value": ".js"
+        },
+        "subDirPattern": "<document>"
+    },
+    "sys_web_service": {
+        "name": "Scripted Web Service",
+        "key": "name",
+        "fields": {
+            "script": ".js"
+        },
+        "subDirPattern": null
+    },
+    "sys_widgets": {
+        "name": "Widget",
+        "key": "name",
+        "fields": {
+            "script": ".js"
+        }
+    },
+    "sys_ws_operation": {
+        "name": "Scripted REST Resource",
+        "key": "<name>-<http_method>",
+        "fields": {
+            "operation_script": ".js"
+        },
+        "subDirPattern": "<web_service_definition!dv>/<web_service_version!dv>"
+    },
+    "sysauto": {
+        "name": "Scheduled Job",
+        "key": "",
+        "alias": [
+            "sysauto_script",
+            "wf_workflow_schedule",
+            "sysauto_summary_generator",
+            "cert_schedule",
+            "sysauto_db_check",
+            "u_psp_scheduled_bulk_share",
+            "sys_api_stats_script",
+            "cert_audit, cert_instance",
+            "sys_broadcast_message",
+            "scheduled_data_export",
+            "sysauto_template",
+            "scheduled_data_import",
+            "scheduled_import_set",
+            "sysauto_custom_chart",
+            "sysauto_pa",
+            "sysauto_indicator_notifications",
+            "sysauto_report"
+        ],
+        "fields": {
+            "condition": ".js"
+        }
+    },
+    "sysauto_custom_chart": {
+        "name": "Scheduled Email of Custom Chart",
+        "key": "name",
+        "fields": {
+            "report_body": ".xhtml"
+        },
+        "subDirPattern": null
+    },
+    "sysauto_report": {
+        "name": "Scheduled Email of Report",
+        "key": "name",
+        "fields": {
+            "report_body": ".xhtml"
+        },
+        "subDirPattern": null
+    },
+    "sysauto_script": {
+        "name": "Scheduled Script Execution",
+        "key": "sys_name",
+        "fields": {
+            "script": ".js"
+        },
+        "subDirPattern": "<sys_class_name>"
+    },
+    "sysevent_email_action": {
+        "name": "Notification",
+        "key": "name",
+        "fields": {
+            "advanced_condition": ".js",
+            "message": ".xhtml",
+            "message_html": ".xhtml",
+            "message_text": ".xhtml",
+            "sms_alternate": ".xhtml"
+        },
+        "subDirPattern": "<collection>"
+    },
+    "sysevent_email_style": {
+        "name": "Stationery",
+        "key": "name",
+        "fields": {
+            "style": ".xhtml"
+        },
+        "subDirPattern": null
+    },
+    "sysevent_email_template": {
+        "name": "Email Template",
+        "key": "name",
+        "fields": {
+            "message": ".xhtml",
+            "message_html": ".xhtml",
+            "message_text": ".xhtml",
+            "sms_alternate": ".xhtml"
+        }
+    },
+    "sysevent_in_email_action": {
+        "name": "Inbound Email Actions",
+        "key": "name",
+        "fields": {
+            "condition_script": ".js",
+            "script": ".js",
+            "reply_email": ".xhtml"
+        },
+        "subDirPattern": "<table>"
+    },
+    "sysevent_script_action": {
+        "name": "Script Action"
+    },
+    "sysrule_escalate": {
+        "name": "Service Level Agreement",
+        "key": "name",
+        "fields": {
+            "assignment_script": ".js",
+            "advanced_condition": ".js"
+        },
+        "subDirPattern": "<table!dv>"
+    },
+    "sysrule_view": {
+        "name": "View Rule",
+        "key": "name",
+        "fields": {
+            "script": ".js"
+        },
+        "subDirPattern": null
+    },
+    "u_maintenance_message": {
+        "name": "Maintenance Message",
+        "key": "sys_name",
+        "fields": {
+            "u_main_message": ".xhtml",
+            "u_message_up_right": ".xhtml"
+        },
+        "subDirPattern": null
+    },
+    "u_sr_integrations": {
+        "name": "SR integrations",
+        "key": "u_operation",
+        "fields": {
+            "u_script": ".js"
+        },
+        "subDirPattern": null
+    },
+    "usageanalytics_count_cfg": {
+        "name": "UsageAnalytics Count Configuration",
+        "key": "definition_id",
+        "fields": {
+            "script": ".js"
+        },
+        "subDirPattern": null
+    },
+    "wf_activity_definition": {
+        "name": "Workflow Activity Definition",
+        "key": "name",
+        "fields": {
+            "script": ".js"
+        }
+    },
+    "wf_activity_variable": {
+        "name": "Activity Variable",
+        "key": "element",
+        "fields": {
+            "default_value": ".js",
+            "dynamic_creation_script": ".js",
+            "calculation": ".js"
+        },
+        "subDirPattern": "<model!dv>"
+    },
+    "wf_element_activity": {
+        "name": "Activity Designer",
+        "key": "name",
+        "fields": {
+            "input_process_script": ".js",
+            "output_process_script": ".js",
+            "processing_script": ".js"
+        },
+        "subDirPattern": null
+    },
+    "sys_atf_test_suite": {
+        "name": "ATF Test Suite",
+        "key": "name",
+        "json": true,
+        "query": "active=true",
+        "subDirPattern": null
+    },
+    "sys_atf_test": {
+        "name": "ATF Test",
+        "key": "name",
+        "json": true,
+        "query": "active=true",
+        "subDirPattern": null
+    },
+    "sys_atf_step": {
+        "name": "ATF Test Step",
+        "key": "<order>-<display_name>",
+        "fields":{
+            "inputs" : ".js"
+        },
+        "query": "active=true^display_name=Run Server Side Script",
+        "subDirPattern": null
+    }
+}

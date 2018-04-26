@@ -76,7 +76,7 @@ var waitForTestInSnowToComplete = function (testExecutionID) {
     return promiseFor(function (state) { return (state < 2); }, function () {
 
         return client.get({
-            url: "api/now/table/sys_execution_tracker/".concat(testExecutionID),
+            url: "/api/swre/v1/va/atf/track/".concat(testExecutionID),
             qs: {
                 sysparm_display_value: 'all'
             }

@@ -51,6 +51,7 @@ function SnProject(options) {
         _copyAlias.call(self, self.getEntity(className));
     });
     //console.log('SnProject ready');
+    //console.log(self.config)
 }
 
 
@@ -133,7 +134,7 @@ SnProject.prototype.build = function () {
 SnProject.prototype.setup = function () {
     var self = this;
 
-    var templateDir = path.join(__dirname, 'template');
+    var templateDir = self.config.templateDir;
     var rootDir = self.config.dir;
 
     var directories = [

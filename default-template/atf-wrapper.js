@@ -1,16 +1,10 @@
-var chai = require("chai");
-//var chaiAsPromised = require("chai-as-promised");
-//chai.use(chaiAsPromised);
+var chai = require("chai"),
+    expect = chai.expect,
+    assert = chai.assert;
 
-// Then either: 
-var expect = chai.expect;
-// or: 
-var assert = chai.assert;
-
-var SnRestClient = require("sn-rest-client");
-var Promise = require('bluebird');
-
-var fs = Promise.promisifyAll(require("fs"));
+var SnRestClient = require("sn-rest-client"),
+    Promise = require('bluebird'),
+    fs = Promise.promisifyAll(require("fs"));
 
 var promiseFor = Promise.method(function (condition, action, value) {
     if (!condition(value))

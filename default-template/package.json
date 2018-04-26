@@ -12,7 +12,7 @@
     "mkdirp": "0.5.1",
     "mocha": "^2.4.5",
     "mochawesome": "3.0.2",
-    "sn-rest-client": "bmoers/sn-rest-client"
+    "sn-rest-client": "github:bmoers/sn-rest-client#semver:1.x"
   },
   "scripts": {
     "build": "gulp",

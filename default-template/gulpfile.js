@@ -1,16 +1,15 @@
-var gulp = require('gulp');
-var jsdoc3 = require('gulp-jsdoc3');
-var mocha = require('gulp-mocha');
-
-var eslint = require('gulp-eslint'),
+var gulp = require('gulp'),
+    jsdoc3 = require('gulp-jsdoc3'),
+    mocha = require('gulp-mocha'),
+    eslint = require('gulp-eslint'),
     reporter = require('eslint-detailed-reporter'),
     path = require('path'),
     fs = require('fs'),
     mkdirp = require('mkdirp');
 
-var config = require('./config/project.json');
 
-var jsDocConfig = require('./config/jsdoc.json');
+var config = require('./config/project.json'),
+    jsDocConfig = require('./config/jsdoc.json');
 jsDocConfig.opts.destination = path.resolve(config.application.dir.doc, 'docs');
 jsDocConfig.templates.systemName = config.application.name;
 
@@ -136,7 +135,8 @@ gulp.task('default', ['build'], function () {
 });
 
 
-/*
+/* 
+// NOTES
 
 // call JsDoc directly
 gulp.task('docs', function (done) {

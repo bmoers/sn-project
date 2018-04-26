@@ -204,7 +204,7 @@ SnProject.prototype.setup = function () {
         /*
             create and configure a package.json file
         */
-        return fs.readFileAsync(path.resolve(__dirname, 'template', 'package.json'), 'utf8').then(function (text) {
+        return fs.readFileAsync(path.resolve(self.config.templateDir, 'package.json'), 'utf8').then(function (text) {
             var packageDefinition = JSON.parse(text);
             var packageName = self.config.appName.toLowerCase();
             packageDefinition.name = '@'.concat(self.config.organization).concat('/').concat(packageName.replace(/\s+/g, "-").replace(/(?:^[\.|_])|[^a-z0-9\-\._~]/g, '').replace(/\-+/g, '-'));

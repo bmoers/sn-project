@@ -19,8 +19,8 @@ var lintConfig = {
 };
 
 gulp.task('init', function () {
-    mkdirp.mkdirp(jsDocConfig.opts.destination);
-    mkdirp.mkdirp(lintConfig.destination);
+    mkdirp.sync(jsDocConfig.opts.destination);
+    mkdirp.sync(lintConfig.destination);
 });
 
 gulp.task('eslint', ['init'], function () {

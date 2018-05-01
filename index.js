@@ -188,7 +188,9 @@ SnProject.prototype.setup = function () {
         */
         return Promise.each(copyDir, function (copyDir) {
             console.log("Copy Directory Fom '%s', to '%s'", copyDir.from, copyDir.to);
-            return copy(copyDir.from, copyDir.to);
+            return copy(copyDir.from, copyDir.to).catch((e) => {
+                console.log("Folder copy failed. Will slow down the build process but auto fixed with npm install.");
+            });
         });
         
     }).then(function () {

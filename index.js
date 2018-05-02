@@ -85,9 +85,21 @@ SnProject.prototype.install = function () {
             error = buff.toString();
         });
 
-        childProcess.once('error', reject);
+        childProcess.once('error', function (code) {
+            try {
+                process.kill(childProcess.pid);
+            } catch (e) {
+                // console.error(e);
+            }
+            reject(new Error('Exited with code ' + code + '\n' + error + '\n' + data));
+        });
 
         childProcess.once('close', function (code) {
+            try {
+                process.kill(childProcess.pid);
+            } catch (e) {
+                // console.error(e);
+            }
             if (code > 0) {
                 reject(new Error('Exited with code ' + code + '\n' + error + '\n' + data));
                 return;
@@ -118,10 +130,20 @@ SnProject.prototype.build = function () {
         });
 
         childProcess.once('error', function (code) {
+            try {
+                process.kill(childProcess.pid);
+            } catch (e) {
+                // console.error(e);
+            }
             reject(new Error('Exited with code ' + code + '\n' + error + '\n' + data));
         });
 
         childProcess.once('close', function (code) {
+            try {
+                process.kill(childProcess.pid);
+            } catch (e) {
+                // console.error(e);
+            }
             if (code > 0) {
                 reject(new Error('Exited with code ' + code + '\n' + error + '\n' + data));
                 return;

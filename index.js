@@ -240,23 +240,28 @@ SnProject.prototype.setup = function () {
     });
 };
 
-SnProject.prototype.getTestSuites = function () {
-    var self = this;
-    return self.db.findAsync({ className: 'sys_atf_test_suite' });
+SnProject.prototype.getTestSuites = function (fileSource) {
+    var self = this,
+        query = (fileSource) ? { className: 'sys_atf_test_suite', src: fileSource } : { className: 'sys_atf_test_suite' };
+    return self.db.findAsync(query);
 };
 
-SnProject.prototype.getTests = function () {
-    var self = this;
-    return self.db.findAsync({ className: 'sys_atf_test' });
+SnProject.prototype.getTests = function (fileSource) {
+    var self = this,
+        query = (fileSource) ? { className: 'sys_atf_test', src: fileSource } : { className: 'sys_atf_test' };
+    return self.db.findAsync(query);
 };
+
 SnProject.prototype.getFileById = function (sysId) {
     var self = this;
     return self.db.findOneAsync({ sysId: sysId });
 };
+
 SnProject.prototype.deleteFileById = function (sysId) {
     var self = this;
     return self.db.removeAsync({ sysId: sysId });
 };
+
 SnProject.prototype.writeFile = function (filePath, content) {  
     var self = this;
     console.log("write to ", path.join(self.config.dir, filePath));
@@ -462,12 +467,12 @@ SnProject.prototype.save = function (file) {
 
     //console.log("save file", file.sys_id);
 
-    var applicationName = file.____.appName;
-    var scopeName = file.____.scopeName; 
-    var className = file.____.className;
+    var applicationName = file.____.appName,
+        scopeName = file.____.scopeName,
+        className = file.____.className,
+        fileSource = file.____.src;
 
     var fileUUID = ['sn', applicationName];
-
     var filesOnDisk = [];
 
     return Promise.try(function () {
@@ -669,7 +674,7 @@ SnProject.prototype.save = function (file) {
                     return pfile.writeFileAsync(fieldFileOsPath, fileObject.body).then(function () {
                         console.log("\t\tadd file '%s'", fieldFileOsPath);
                         return self.db.updateAsync({ _id: cacheKey },
-                            { _id: cacheKey, counter: counter, hash: fileObject.hash, sysId: fileObject.sysId, className: className, appName: applicationName },
+                            { _id: cacheKey, counter: counter, hash: fileObject.hash, sysId: fileObject.sysId, className: className, appName: applicationName, src: fileSource },
                             { upsert: true });
                     });
                     

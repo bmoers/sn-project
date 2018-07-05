@@ -256,18 +256,28 @@ describe("ATF-Wrapper", function () {
             }
 
             var testRunner;
-            var cp;
-            return openTestRunner(config, config.host.name + '/nav_to.do?uri=atf_test_runner.do%3fsysparm_scheduled_tests_only%3dfalse%26sysparm_nostack%3dtrue').then((runner) => {
-                testRunner = runner;
-            }).then(function () {
+            return Promise.try(()=>{ 
                 return Promise.each(testConfig.suites || [], function (suiteId) {
                     //console.log("RUN SUITE: ", suiteId);
-                    return remoteTest(suiteId, TEST_SUITE);
+                    return openTestRunner(config, config.host.name + '/nav_to.do?uri=atf_test_runner.do%3fsysparm_scheduled_tests_only%3dfalse%26sysparm_nostack%3dtrue').then((runner) => {
+                        testRunner = runner;
+                    }).then(() => {
+                        return remoteTest(suiteId, TEST_SUITE);
+                    }).then(() => {
+                        return closeTestRunner(testRunner);
+                    });
+                    
                 });
             }).then(function () {
                 return Promise.each(testConfig.tests || [], function (testId) {
                     //console.log("RUN TEST: ", testId);
-                    return remoteTest(testId, TEST);
+                    return openTestRunner(config, config.host.name + '/nav_to.do?uri=atf_test_runner.do%3fsysparm_scheduled_tests_only%3dfalse%26sysparm_nostack%3dtrue').then((runner) => {
+                        testRunner = runner;
+                    }).then(() => {
+                        return remoteTest(testId, TEST);
+                    }).then(() => {
+                        return closeTestRunner(testRunner);
+                    });
                 });
             }).then(function () {
 

@@ -169,7 +169,7 @@ SnProject.prototype.setup = function () {
             to: path.resolve(rootDir, 'test', 'atf-wrapper.js')
         },
         {
-            from: path.resolve(templateDir, '.npmrc'),
+            from: path.resolve(templateDir, 'npmrc'),
             to: path.resolve(rootDir, '.npmrc')
         },
         {

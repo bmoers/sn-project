@@ -12,6 +12,7 @@
     "mkdirp": "0.5.1",
     "mocha": "^2.4.5",
     "mochawesome": "3.0.2",
+    "puppeteer": "1.5.0",
     "sn-rest-client": "github:bmoers/sn-rest-client#semver:1.x"
   },
   "scripts": {

@@ -2,6 +2,8 @@ var chai = require("chai"),
     expect = chai.expect,
     assert = chai.assert;
 
+var puppeteer = require('puppeteer');
+
 var SnRestClient = require("sn-rest-client"),
     Promise = require('bluebird'),
     fs = Promise.promisifyAll(require("fs"));
@@ -198,6 +200,46 @@ var remoteTest = function (id, type) {
         .then(logSnowTestResults);
 };
 
+var openTestRunner = function (config, url) {
+    var credentials = config.atf.credentials.oauth;
+    var executablePath = config.atf.browser.bin;
+    return Promise.try(() => {
+        return puppeteer.launch({
+            ignoreHTTPSErrors: true,
+            headless: true,
+            executablePath: executablePath
+        });    
+    }).then((browser) => {
+        return browser.newPage().then((page) => {
+
+            return page.setExtraHTTPHeaders({
+                'Authorization': 'Bearer '.concat(credentials.accessToken)
+            }).then(() => {
+                return page.setUserAgent('Mozilla/5.0 (Windows; U; Windows NT 6.1; rv:2.2) Gecko/20110201');
+            }).then(() => {
+                return page.setViewport({ width: 1400, height: 800 });
+            }).then(() => {
+                return page.goto(url, {
+                    waitUntil: 'networkidle2'
+                });
+            });
+            
+        }).then(() => {
+            return browser;
+        });
+    }).delay(1000).then((browser) => {
+        console.log("browser started and ready");
+        return browser;    
+    });
+};
+
+var closeTestRunner = function (runner) {
+    return Promise.try(() => {
+        if (runner)
+            return runner.close(); 
+    });
+};
+
 describe("ATF-Wrapper", function () {
 
     return getTestConfiguration().then(configureClient).then(function (config) {
@@ -205,7 +247,6 @@ describe("ATF-Wrapper", function () {
 
         var testConfig = config.atf;
         var browser = testConfig.browser.bin || BROWSER;
-        var arg = testConfig.browser.arg || ['-nomerge'];
 
         return Promise.try(function () {
 
@@ -214,12 +255,11 @@ describe("ATF-Wrapper", function () {
                 return false;
             }
 
+            var testRunner;
             var cp;
-            return Promise.try(function () {
-                console.log("Open Browser", new Date());
-                cp = require('child_process').spawn(browser, arg.concat([config.host.name + '/nav_to.do?uri=atf_test_runner.do%3fsysparm_scheduled_tests_only%3dfalse%26sysparm_nostack%3dtrue']), { detached: true });
-                console.log('PID is:', cp.pid);
-            }).delay(30000).then(function () {
+            return openTestRunner(config, config.host.name + '/nav_to.do?uri=atf_test_runner.do%3fsysparm_scheduled_tests_only%3dfalse%26sysparm_nostack%3dtrue').then((runner) => {
+                testRunner = runner;
+            }).then(function () {
                 return Promise.each(testConfig.suites || [], function (suiteId) {
                     //console.log("RUN SUITE: ", suiteId);
                     return remoteTest(suiteId, TEST_SUITE);
@@ -235,22 +275,16 @@ describe("ATF-Wrapper", function () {
                 describe('SNOW Execution  ', function () {
                     it('Failed with', function (done) {
                         console.log(e);
-                        console.log(Object.keys(e));
+                        //console.log(Object.keys(e));
                         var message = e.error ? e.error.error ? e.error.error.message : null : null || 'no message';
+                        console.error(message);
                         expect(e.statusCode, message).to.equal(200);
                         done();
                     });
                 });
             }).finally(function () {
                 after(function () {
-                    try {
-                        // runs after all tests in this block
-                        console.log('Closing the browser. PID:', cp.pid);
-                        //cp.kill('SIGINT');
-                        process.kill(cp.pid);
-                    } catch (e) {
-                        console.log("was not able to kill browser with PID", e);
-                    }
+                    return closeTestRunner(testRunner);
                 });
 
             }).then(function () {

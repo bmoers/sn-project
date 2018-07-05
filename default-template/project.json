@@ -1,7 +1,20 @@
 {
     "atf": {
         "suites": [],
-        "tests": []
+        "tests": [],
+        "browser": {
+            "bin": "chrome.exe",
+            "arg": []
+        },
+        "credentials": {
+            "name": null,
+            "oauth": {
+                "accessToken": null,
+                "refreshToken": null,
+                "clientId": null,
+                "clientSecret": null
+            }
+        }
     },
     "lint": [
         "*/**/*.js"

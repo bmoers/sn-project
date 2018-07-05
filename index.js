@@ -169,6 +169,10 @@ SnProject.prototype.setup = function () {
             to: path.resolve(rootDir, 'test', 'atf-wrapper.js')
         },
         {
+            from: path.resolve(templateDir, '.npmrc'),
+            to: path.resolve(rootDir, '.npmrc')
+        },
+        {
             from: path.resolve(templateDir, 'gulpfile.js'),
             to: path.resolve(rootDir, 'gulpfile.js')
         },

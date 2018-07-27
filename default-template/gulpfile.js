@@ -7,6 +7,11 @@ var gulp = require('gulp'),
     fs = require('fs'),
     mkdirp = require('mkdirp');
 
+gulp.Gulp.prototype.__runTask = gulp.Gulp.prototype._runTask;
+gulp.Gulp.prototype._runTask = function (task) {
+    this.currentTask = task;
+    this.__runTask(task);
+};
 
 var config = require('./config/project.json'),
     jsDocConfig = require('./config/jsdoc.json');
@@ -14,19 +19,44 @@ jsDocConfig.opts.destination = path.resolve(config.application.dir.doc, 'docs');
 jsDocConfig.templates.systemName = config.application.name;
 
 var lintConfig = {
-    destination:
-        path.resolve(config.application.dir.doc, 'lint')
+    destination: path.resolve(config.application.dir.doc, 'lint')
+};
+
+var onError = function (error) {
+    try {
+        var taskName = gulp.currentTask.name || 'undefined-task';
+        var errorConfig = config.gulp.task[taskName] || {
+            breakOnError: false
+        };
+        if (errorConfig.breakOnError) {
+            this.emit('err');
+            console.error(`ERROR: Gulp failed on task '${taskName}'. Type: '${error.name}', Message: '${error.message}'`);
+            console.error(`Exit process with ${errorConfig.code}`);
+            process.exit(errorConfig.code);
+
+        } else {
+            console.warn(`WARN: Gulp failed on task '${taskName}'. Type: '${error.name}', Message: '${error.message}'`);
+        }
+    } catch (e) {
+        console.error('Error handling failed', e);
+    }
+    this.emit('end');
 };
 
 gulp.task('init', function () {
-    mkdirp.sync(jsDocConfig.opts.destination);
-    mkdirp.sync(lintConfig.destination);
+    var self = this;
+    try {
+        mkdirp.sync(jsDocConfig.opts.destination);
+        mkdirp.sync(lintConfig.destination);
+    } catch (e) {
+        onError.call(this, e);
+    }
 });
 
 gulp.task('eslint', ['init'], function () {
-
+    var self = this;
     var esLintReport = path.resolve(lintConfig.destination, 'index.html');
-    console.log("EsLint to destination:", esLintReport);
+    console.log('EsLint to destination:', esLintReport);
 
     // ESLint ignores files with "node_modules" paths.
     // So, it's best to have gulp ignore the directory as well.
@@ -37,33 +67,33 @@ gulp.task('eslint', ['init'], function () {
         // of the file object so it can be used by other modules.
         .pipe(eslint({
             fix: true,
-            extends: "eslint:recommended",
+            extends: 'eslint:recommended',
             rules: {
-                'valid-jsdoc': 1,
-                'no-alert': 0,
-                'no-bitwise': 0,
-                'camelcase': 1,
-                'curly': 1,
-                'eqeqeq': 0,
-                'no-eq-null': 0,
-                'guard-for-in': 1,
-                'no-empty': 1,
-                'no-use-before-define': 0,
-                'no-obj-calls': 2,
-                'no-unused-vars': 0,
-                'new-cap': 1,
-                'no-shadow': 0,
-                'strict': 0,
-                'no-invalid-regexp': 2,
-                'comma-dangle': 2,
-                'no-undef': 1,
-                'no-new': 1,
-                'no-extra-semi': 1,
-                'no-debugger': 2,
-                'no-caller': 1,
-                'semi': 1,
-                'quotes': 0,
-                'no-unreachable': 2
+                'valid-jsdoc': 'warn',
+                'no-alert': 'error',
+                'no-bitwise': 'off',
+                'camelcase': 'warn',
+                'curly': 'warn',
+                'eqeqeq': 'warn',
+                'no-eq-null': 'off',
+                'guard-for-in': 'warn',
+                'no-empty': 'warn',
+                'no-use-before-define': 'off',
+                'no-obj-calls': 'warn',
+                'no-unused-vars': 'off',
+                'new-cap': 'warn',
+                'no-shadow': 'off',
+                'strict': 'off',
+                'no-invalid-regexp': 'error',
+                'comma-dangle': 'warn',
+                'no-undef': 'warn',
+                'no-new': 'warn',
+                'no-extra-semi': 'warn',
+                'no-debugger': 'warn',
+                'no-caller': 'warn',
+                'semi': 'warn',
+                'quotes': 'off',
+                'no-unreachable': 'warn'
             },
             globals: [
                 'jQuery',
@@ -84,40 +114,56 @@ gulp.task('eslint', ['init'], function () {
         .pipe(eslint.format(reporter, function (results) {
             fs.writeFileSync(esLintReport, results);
         }))
-    // To have the process exit with an error code (1) on
-    // lint error, return the stream and pipe to failAfterError last.
-    //.pipe(eslint.failAfterError());
+        // To have the process exit with an error code (1) on
+        // lint error, return the stream and pipe to failAfterError last.
+        //.pipe(eslint.failAfterError());
+
+        .pipe(eslint.failAfterError())
+        .on('error', onError);
+
 });
 
 gulp.task('jsdoc3', ['eslint'], function (done) {
-    console.log("JsDoc to destination:", jsDocConfig.opts.destination);
-    gulp.src(['README.md', './sn/**/*.js', './sn/**/*.jsdoc'], { read: false })
+    var self = this;
+    console.log('JsDoc to destination:', jsDocConfig.opts.destination);
+    gulp.src(['README.md', './sn/**/*.js', './sn/**/*.jsdoc'], {
+            read: false
+        })
         .pipe(jsdoc3(jsDocConfig, function () {
-            console.log("\tdone");
+            console.log('\tdone');
             done();
-        }));
+        })).on('error', onError);
 });
 
-gulp.task('test', ['jsdoc3'], function () {
-    return gulp.src(['test/*.js'], { read: false })
+gulp.task('test', ['jsdoc3'], function (done) {
+    var self = this;
+    return gulp.src(['test/*.js'], {
+            read: false
+        })
         .pipe(mocha({
             reporter: 'mochawesome', // 'xunit' 'spec'
             reporterOptions: {
                 reportDir: path.resolve(config.application.dir.doc, 'test'),
                 reportFilename: 'index.html',
+                reportTitle: `${config.application.name} - ${config.updateSet.name}`,
+                reportPageTitle: 'ATF Results',
                 quiet: true,
-                json: true
+                json: true,
+                inline: false,
+                code: false
             },
             timeout: 30000,
             delay: true
-        }));
+        })).on('error', onError);
 });
 
 /*
     mocha report as XML
 */
 gulp.task('test-xunit', ['jsdoc3'], function () {
-    return gulp.src(['test/*.js'], { read: false })
+    return gulp.src(['test/*.js'], {
+            read: false
+        })
         .pipe(mocha({
             reporter: 'xunit', // 'xunit' 'spec'
             reporterOptions: {
@@ -125,10 +171,10 @@ gulp.task('test-xunit', ['jsdoc3'], function () {
             },
             timeout: 30000,
             delay: true
-        }));
+        })).on('error', onError);
 });
 
-gulp.task('build', ['test'], function () { });
+gulp.task('build', ['test'], function () {});
 
 gulp.task('default', ['build'], function () {
 
@@ -152,4 +198,3 @@ gulp.task('doc', function () {
     .pipe(gulpDocumentation('html', {})).pipe(gulp.dest('html-documentation'));
 });
 */
-

@@ -1,4 +1,25 @@
 {
+    "gulp": {
+        "task": {
+            "init": {
+                "code": 3,
+                "breakOnError": true
+            },
+            "eslint": {
+                "code": 5,
+                "breakOnError": false
+            },
+            "jsdoc3": {
+                "code": 7,
+                "breakOnError": false
+            },
+            "test": {
+                "code": 9,
+                "breakOnError": true
+            }
+        }
+    },
+
     "atf": {
         "suites": [],
         "tests": [],
@@ -6,6 +27,7 @@
             "bin": "chrome.exe",
             "arg": []
         },
+        "updateSetOnly": false,
         "credentials": {
             "name": null,
             "oauth": {

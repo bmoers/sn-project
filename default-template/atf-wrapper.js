@@ -8,6 +8,8 @@ var SnRestClient = require("sn-rest-client"),
     Promise = require('bluebird'),
     fs = Promise.promisifyAll(require("fs"));
 
+var addContext = require('mochawesome/addContext');
+
 var promiseFor = Promise.method(function (condition, action, value) {
     if (!condition(value))
         return value;
@@ -52,17 +54,26 @@ var executeTestInSnow = function (id, type) {
     console.log("executeTestInSnow", id, type);
     return client.post({
         url: (type === TEST) ? "/api/swre/v1/va/atf/test" : "/api/swre/v1/va/atf/suite"
-    }, (type === TEST) ? { testId: id } : { suiteId: id }).then(function (result) {
+    }, (type === TEST) ? {
+        testId: id
+    } : {
+        suiteId: id
+    }).then(function (result) {
 
-        var executionId = result[0].executionId;
+        var test = result[0],
+            executionId = test.executionId,
+            name = test.name,
+            url = test.url;
 
-        describe('Execute Test in Snow: \''.concat(id).concat('\' - Execution ID: \'').concat(executionId).concat('\''), function () {
+        describe(`Execute ATF: Run ${(type === TEST? 'Test': 'Test Suite')} "${name}"`, function () {
+
             it('Job started', function (done) {
+                addContext(this, url);
                 expect(result.length).to.equal(1, 'unexpected REST result');
-
                 expect(executionId, 'no test execution ID found').to.not.be.null;
                 done();
             });
+
         });
         return executionId;
     });
@@ -72,10 +83,13 @@ var waitForTestInSnowToComplete = function (testExecutionID) {
 
     console.log("waitForTestInSnowToComplete", testExecutionID);
     var executionTracker,
-        maxIter = (MAX_WAIT_SEC * 1000 / WAIT_DELAY_MS)
-    iter = 0;
+        maxIter = (MAX_WAIT_SEC * 1000 / WAIT_DELAY_MS),
+        iter = 0,
+        delay = 500;
 
-    return promiseFor(function (state) { return (state < 2); }, function () {
+    return promiseFor(function (state) {
+        return (state < 2);
+    }, function () {
 
         return client.get({
             url: "/api/swre/v1/va/atf/track/".concat(testExecutionID),
@@ -90,9 +104,16 @@ var waitForTestInSnowToComplete = function (testExecutionID) {
             console.log('\tSTATE is: ', executionTracker.state.display_value, '#', iter);
 
             if (iter >= maxIter) {
-                throw { statusCode: -999, error: { error: { message: "Test did not complete in SNOW after " + MAX_WAIT_SEC + " seconds." } } };
+                throw {
+                    statusCode: -999,
+                    error: {
+                        error: {
+                            message: "Test did not complete in SNOW after " + MAX_WAIT_SEC + " seconds."
+                        }
+                    }
+                };
             } else if (state <= 1) {
-                return Promise.delay(500).then(function () {
+                return Promise.delay(delay).then(function () {
                     return state;
                 });
             } else {
@@ -105,9 +126,10 @@ var waitForTestInSnowToComplete = function (testExecutionID) {
 
     }, 0).then(function () {
 
-        describe('Wait for Test Execution to complete in SNOW'.concat('\' - Execution ID: \'').concat(testExecutionID).concat('\''), function () {
+        describe(`Execute ATF: Wait for Test Execution to complete`, function () { // - Execution ID: "${testExecutionID}"
 
-            it('Test execution completed: '.concat(executionTracker.state.display_value), function (done) {
+            it(`Test execution completed: "${executionTracker.state.display_value}" after ${(iter * delay / 1000)} seconds`, function (done) {
+                addContext(this, executionTracker.url);
                 expect(executionTracker, 'no test status information found').to.not.be.null;
                 done();
             });
@@ -133,11 +155,9 @@ var getTestResultsFromSnow = function (testResultObject) {
     }).then(function (result) {
         var testExecutionResult = result[0];
 
-        describe('Process Snow Test Results', function () {
-            it('Get all test results', function (done) {
-
+        describe('RUN: Process Snow Test Results', function () {
+            it('Get all test results from ServiceNow', function (done) {
                 expect(result.length).to.equal(1, 'no test results found');
-
                 done();
             });
         });
@@ -148,47 +168,42 @@ var getTestResultsFromSnow = function (testResultObject) {
 
 var logSnowTestResults = function (testExecutionResult) {
     console.log("logSnowTestResults");
+    //console.dir(testExecutionResult, { depth: null, colors: true });
 
     if (testExecutionResult.type == 'test_suite_result') {
 
-        describe('SNOW Test-Suite Result: '.concat(testExecutionResult.number), function () {
+        describe(`Test-Suite Result: "${testExecutionResult.number}"`, function () {
 
-            it('Test-Suite overall result', function (done) {
+            it('Test-Suite Overall Result', function (done) {
+                addContext(this, testExecutionResult.url);
                 expect(testExecutionResult.status).to.equal('success');
                 done();
             });
 
             (testExecutionResult.testResults || []).forEach(function (testResult) {
 
-                describe('Test-Suite-Test Result: '.concat(testResult.number), function () {
-
+                describe(`Test Result: "${testResult.number}"`, function () {
                     testResult.stepResults.forEach(function (stepResult) {
-                        it(stepResult.step.concat('-').concat(stepResult.order).concat('-').concat(stepResult.startTime), function (done) {
-                            //console.log('Output: "', stepResult.summary, '"');
+                        it(`${stepResult.order} : ${stepResult.startTime} - ${stepResult.step}`, function (done) {
+                            addContext(this, stepResult.url);
                             expect(stepResult.status).to.equal('success');
-
                             done();
                         });
                     });
-
                 });
             });
-
 
         });
     } else {
 
-        describe('SNOW Test Result: '.concat(testExecutionResult.number), function () {
-
+        describe(`Test Result: "${testExecutionResult.number}"`, function () {
             testExecutionResult.stepResults.forEach(function (stepResult) {
-                it(stepResult.step.concat('-').concat(stepResult.order).concat('-').concat(stepResult.startTime), function (done) {
-                    //console.log('Output: "', stepResult.summary, '"');
+                it(`${stepResult.order} : ${stepResult.startTime} - ${stepResult.step}`, function (done) {
+                    addContext(this, stepResult.url);
                     expect(stepResult.status).to.equal('success');
-
                     done();
                 });
             });
-
         });
     }
 };
@@ -208,7 +223,7 @@ var openTestRunner = function (config, url) {
             ignoreHTTPSErrors: true,
             headless: true,
             executablePath: executablePath
-        });    
+        });
     }).then((browser) => {
         return browser.newPage().then((page) => {
 
@@ -217,30 +232,33 @@ var openTestRunner = function (config, url) {
             }).then(() => {
                 return page.setUserAgent('Mozilla/5.0 (Windows; U; Windows NT 6.1; rv:2.2) Gecko/20110201');
             }).then(() => {
-                return page.setViewport({ width: 1400, height: 800 });
+                return page.setViewport({
+                    width: 1400,
+                    height: 800
+                });
             }).then(() => {
                 return page.goto(url, {
                     waitUntil: 'networkidle2'
                 });
             });
-            
+
         }).then(() => {
             return browser;
         });
     }).delay(1000).then((browser) => {
         console.log("browser started and ready");
-        return browser;    
+        return browser;
     });
 };
 
 var closeTestRunner = function (runner) {
     return Promise.try(() => {
         if (runner)
-            return runner.close(); 
+            return runner.close();
     });
 };
 
-describe("ATF-Wrapper", function () {
+describe("Execute ATF: Wrapper", function () {
 
     return getTestConfiguration().then(configureClient).then(function (config) {
 
@@ -256,42 +274,33 @@ describe("ATF-Wrapper", function () {
             }
 
             var testRunner;
-            return Promise.try(()=>{ 
+            var cp;
+            return openTestRunner(config, config.host.name + '/nav_to.do?uri=atf_test_runner.do%3fsysparm_scheduled_tests_only%3dfalse%26sysparm_nostack%3dtrue').then((runner) => {
+                testRunner = runner;
+            }).then(function () {
                 return Promise.each(testConfig.suites || [], function (suiteId) {
                     //console.log("RUN SUITE: ", suiteId);
-                    return openTestRunner(config, config.host.name + '/nav_to.do?uri=atf_test_runner.do%3fsysparm_scheduled_tests_only%3dfalse%26sysparm_nostack%3dtrue').then((runner) => {
-                        testRunner = runner;
-                    }).then(() => {
-                        return remoteTest(suiteId, TEST_SUITE);
-                    }).then(() => {
-                        return closeTestRunner(testRunner);
-                    });
-                    
+                    return remoteTest(suiteId, TEST_SUITE);
                 });
             }).then(function () {
                 return Promise.each(testConfig.tests || [], function (testId) {
                     //console.log("RUN TEST: ", testId);
-                    return openTestRunner(config, config.host.name + '/nav_to.do?uri=atf_test_runner.do%3fsysparm_scheduled_tests_only%3dfalse%26sysparm_nostack%3dtrue').then((runner) => {
-                        testRunner = runner;
-                    }).then(() => {
-                        return remoteTest(testId, TEST);
-                    }).then(() => {
-                        return closeTestRunner(testRunner);
-                    });
+                    return remoteTest(testId, TEST);
                 });
             }).then(function () {
 
             }).catch(function (e) {
-                describe('SNOW Execution  ', function () {
+
+                var message = e.error ? e.error.error ? e.error.error.message : e.error.message : e.message || 'no message';
+
+                describe('Execute ATF: RuntimeError ', function () {
                     it('Failed with', function (done) {
-                        console.log(e);
-                        //console.log(Object.keys(e));
-                        var message = e.error ? e.error.error ? e.error.error.message : null : null || 'no message';
                         console.error(message);
-                        expect(e.statusCode, message).to.equal(200);
+                        expect.fail(0, 1, message); // force fail
                         done();
                     });
                 });
+
             }).finally(function () {
                 after(function () {
                     return closeTestRunner(testRunner);

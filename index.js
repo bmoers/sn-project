@@ -52,6 +52,8 @@ function SnProject(options) {
     });
     //console.log('SnProject ready');
     //console.log(self.config)
+    self.config.projectFile = path.join(self.config.dir, 'config/project.json');
+    
 }
 
 
@@ -77,35 +79,32 @@ SnProject.prototype.install = function () {
 
         console.log("install node app in", self.config.dir);
 
-        var data, error;
+        var log = '';
         childProcess.stdout.on('data', function (buff) {
-            data = buff.toString();
+            log += buff.toString();
         });
         childProcess.stderr.on('data', function (buff) {
-            error = buff.toString();
+            log += buff.toString();
         });
 
-        childProcess.once('error', function (code) {
-            try {
-                process.kill(childProcess.pid);
-            } catch (e) {
-                // console.error(e);
-            }
-            reject(new Error('Exited with code ' + code + '\n' + error + '\n' + data));
-        });
+        childProcess.on('exit', function (code) {
 
-        childProcess.once('close', function (code) {
-            try {
-                process.kill(childProcess.pid);
-            } catch (e) {
-                // console.error(e);
-            }
+            console.log(`npm install process exited with code: ${code}`);
+
             if (code > 0) {
-                reject(new Error('Exited with code ' + code + '\n' + error + '\n' + data));
+                reject({
+                    failed: true,
+                    log: log
+                });
                 return;
             }
-            resolve(data);
+
+            resolve({
+                failed: false,
+                log: log
+            });
         });
+
     });
 };
 
@@ -115,42 +114,69 @@ SnProject.prototype.build = function () {
     var spawn = require('child_process').spawn;
     var os = require('os');
 
-    var childProcess = spawn((os.platform() === 'win32' ? 'npm.cmd' : 'npm'), ['run-script', 'build'], { cwd: self.config.dir, detached: false });
+    var childProcess = spawn((os.platform() === 'win32' ? 'npm.cmd' : 'npm'), ['run-script', 'build'], { // build
+        cwd: self.config.dir,
+        detached: false
+    }); 
 
-    return new Promise(function (resolve, reject) {
+    return self.getConfig().then((config) => {
+        var gulpTask = config.gulp.task;
 
-        console.log("build and test from", self.config.dir);
+        return new Promise(function (resolve, reject) {
 
-        var data, error;
-        childProcess.stdout.on('data', function (buff) {
-            data = buff.toString();
-        });
-        childProcess.stderr.on('data', function (buff) {
-            error = buff.toString();
-        });
+            console.log("build and test from", self.config.dir);
 
-        childProcess.once('error', function (code) {
-            try {
-                process.kill(childProcess.pid);
-            } catch (e) {
-                // console.error(e);
-            }
-            reject(new Error('Exited with code ' + code + '\n' + error + '\n' + data));
-        });
+            var log = '',
+                data = '',
+                error = '';
+            childProcess.stdout.on('data', function (buff) {
+                var tmp = buff.toString().replace(/\n+/, '\n');
+                //console.log(tmp);
+                data += tmp;
+                log += tmp;
+            });
+            childProcess.stderr.on('data', function (buff) {
+                var tmp = buff.toString().replace(/\n+/, '\n');
+                //console.error(tmp);
+                error += tmp;
+                log += tmp;
+            });
 
-        childProcess.once('close', function (code) {
-            try {
-                process.kill(childProcess.pid);
-            } catch (e) {
-                // console.error(e);
-            }
-            if (code > 0) {
-                reject(new Error('Exited with code ' + code + '\n' + error + '\n' + data));
-                return;
-            }
-            resolve(data);
+            childProcess.on('exit', function (code) {
+                
+                console.log(`build process exited with code: ${code}`);
+                
+                var failed = false;
+
+                Object.keys(gulpTask).forEach((key) => {
+                    var task = gulpTask[key];
+                    task.passed = (code === 0 || task.code < code);
+                    if (task.breakOnError && !failed) {
+                        failed = {
+                            name: key,
+                            task: task
+                        };
+                    }
+                });
+
+                if (code > 0) {
+                    reject({
+                        failed: failed,
+                        tasks: gulpTask,
+                        log: log
+                    });
+                    return;
+                }
+
+                resolve({
+                    failed: failed,
+                    tasks: gulpTask,
+                    log: log
+                });
+            });
         });
     });
+
 };
 
 SnProject.prototype.setup = function () {
@@ -264,6 +290,23 @@ SnProject.prototype.getFileById = function (sysId) {
 SnProject.prototype.deleteFileById = function (sysId) {
     var self = this;
     return self.db.removeAsync({ sysId: sysId });
+};
+
+SnProject.prototype.getConfig = function () {
+    var self = this;
+    return pfile.readFileAsync(self.config.projectFile).then((fileContent) => {
+        return JSON.parse(fileContent);
+    });
+};
+
+SnProject.prototype.setConfig = function (content) {
+    var self = this;
+    //console.dir(content, { depth: null, colors: true });
+    return pfile.readFileAsync(self.config.projectFile).then((fileContent) => {
+        return ObjectAssignDeep(JSON.parse(fileContent), content);
+    }).then((mergedFileContent) => {
+        return pfile.writeFileAsync(self.config.projectFile, JSON.stringify(mergedFileContent, null, '\t'));
+    });
 };
 
 SnProject.prototype.writeFile = function (filePath, content) {  

@@ -215,6 +215,7 @@ var remoteTest = function (id, type) {
         .then(logSnowTestResults);
 };
 
+
 var openTestRunner = function (config, url) {
     var credentials = config.atf.credentials.oauth;
     var executablePath = config.atf.browser.bin;
@@ -262,9 +263,7 @@ describe("Execute ATF: Wrapper", function () {
 
     return getTestConfiguration().then(configureClient).then(function (config) {
 
-
         var testConfig = config.atf;
-        var browser = testConfig.browser.bin || BROWSER;
 
         return Promise.try(function () {
 
@@ -272,22 +271,25 @@ describe("Execute ATF: Wrapper", function () {
                 console.warn("NO TEST FOUND");
                 return false;
             }
-
-            var testRunner;
-            var cp;
-            return openTestRunner(config, config.host.name + '/nav_to.do?uri=atf_test_runner.do%3fsysparm_scheduled_tests_only%3dfalse%26sysparm_nostack%3dtrue').then((runner) => {
-                testRunner = runner;
-            }).then(function () {
-                return Promise.each(testConfig.suites || [], function (suiteId) {
-                    //console.log("RUN SUITE: ", suiteId);
-                    return remoteTest(suiteId, TEST_SUITE);
+            
+            return Promise.each(testConfig.suites || [], function (suiteId) {
+                //console.log("RUN SUITE: ", suiteId);
+                return openTestRunner(config, config.host.name + '/nav_to.do?uri=atf_test_runner.do%3fsysparm_scheduled_tests_only%3dfalse%26sysparm_nostack%3dtrue').then((runner) => {
+                    return remoteTest(suiteId, TEST_SUITE).finally(() => {
+                        return closeTestRunner(runner);
+                    });
                 });
+                
             }).then(function () {
                 return Promise.each(testConfig.tests || [], function (testId) {
                     //console.log("RUN TEST: ", testId);
-                    return remoteTest(testId, TEST);
+                    return openTestRunner(config, config.host.name + '/nav_to.do?uri=atf_test_runner.do%3fsysparm_scheduled_tests_only%3dfalse%26sysparm_nostack%3dtrue').then((runner) => {
+                        return remoteTest(testId, TEST).finally(() => {
+                            return closeTestRunner(runner);
+                        });
+                    });
+
                 });
-            }).then(function () {
 
             }).catch(function (e) {
 
@@ -301,10 +303,7 @@ describe("Execute ATF: Wrapper", function () {
                     });
                 });
 
-            }).finally(function () {
-                after(function () {
-                    return closeTestRunner(testRunner);
-                });
+            }).finally(function () {                
 
             }).then(function () {
                 console.log("execute Mocha Tests...");

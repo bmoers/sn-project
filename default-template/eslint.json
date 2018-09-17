@@ -1,0 +1,44 @@
+{
+    "fix": true,
+    "extends": "eslint:recommended",
+    "rules": {
+        "valid-jsdoc": "warn",
+        "no-alert": "error",
+        "no-bitwise": "off",
+        "camelcase": "warn",
+        "curly": "warn",
+        "eqeqeq": "warn",
+        "no-eq-null": "off",
+        "guard-for-in": "warn",
+        "no-empty": "warn",
+        "no-use-before-define": "off",
+        "no-obj-calls": "warn",
+        "no-unused-vars": "off",
+        "new-cap": "warn",
+        "no-shadow": "off",
+        "strict": "off",
+        "no-invalid-regexp": "error",
+        "comma-dangle": "warn",
+        "no-undef": "warn",
+        "no-new": "warn",
+        "no-extra-semi": "warn",
+        "no-debugger": "warn",
+        "no-caller": "warn",
+        "semi": "warn",
+        "quotes": "off",
+        "no-unreachable": "warn"
+    },
+    "globals": [
+        "jQuery",
+        "$", "sn_ws_err",
+        "gs", "sn_ws", "Class", "GlideDateTime", "GlideRecord", "GlideProperties",
+        "GlideAggregate", "GlideFilter", "GlideTableHierarchy", "TableUtils", "JSON", "Packages", "g_form", "current", "previous",
+        "g_navigation", "g_document", "GlideDialogWindow", "GlideAjax", "gel", "request", "response", "parent", "angular", "$j", "action", "g_list",
+        "GlideModal", "GwtMessage", "g_i18n"
+    ],
+    "envs": [
+        "node",
+        "browser",
+        "angular"
+    ]
+}

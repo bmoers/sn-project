@@ -1,7 +1,7 @@
 // -W083
 
 var Promise = require('bluebird'),
-    fs = Promise.promisifyAll(require("fs")),
+    fs = Promise.promisifyAll(require("fs-extra")),
     path = require("path");
 
 var pfile = require('./lib/project-file');
@@ -50,10 +50,9 @@ function SnProject(options) {
     Object.keys(self.config.entities).forEach(function (className) {
         _copyAlias.call(self, self.getEntity(className));
     });
+
     //console.log('SnProject ready');
-    //console.log(self.config)
     self.config.projectFile = path.join(self.config.dir, 'config/project.json');
-    
 }
 
 
@@ -209,6 +208,14 @@ SnProject.prototype.setup = function () {
         {
             from: path.resolve(templateDir, 'project.json'),
             to: path.resolve(rootDir, 'config', 'project.json')
+        },
+        {
+            from: path.resolve(templateDir, 'eslint.json'),
+            to: path.resolve(rootDir, 'config', 'eslint.json')
+        },
+        {
+            from: path.resolve(templateDir, 'gulp.json'),
+            to: path.resolve(rootDir, 'config', 'gulp.json')
         }
     ];
 
@@ -217,22 +224,22 @@ SnProject.prototype.setup = function () {
         this will speed up the app install process.
         make sure all required modules are also in this app (package.json)
     */
+    /*
     var copyDir = [{
         from: path.resolve(__dirname, 'node_modules'),
         to: path.resolve(rootDir, 'node_modules')
     }];
-
+    */
+    var copyDir = [];
 
     console.log("Project setup");
 
     /*
         create all additional directories
     */
-    return Promise.each(directories, function (directory) { 
-        
+    return Promise.each(directories, function (directory) {
         console.log("Create directory '%s", directory);
         return pfile.mkdirpAsync(directory);
-
     }).then(function () {
         
         /* 
@@ -294,15 +301,15 @@ SnProject.prototype.deleteFileById = function (sysId) {
 
 SnProject.prototype.getConfig = function () {
     var self = this;
-    return pfile.readFileAsync(self.config.projectFile).then((fileContent) => {
+    return pfile.readFileAsync(self.config.projectFile, 'utf8').then((fileContent) => {
         return JSON.parse(fileContent);
     });
 };
 
 SnProject.prototype.setConfig = function (content) {
-    var self = this;
+    const self = this;
     //console.dir(content, { depth: null, colors: true });
-    return pfile.readFileAsync(self.config.projectFile).then((fileContent) => {
+    return pfile.readFileAsync(self.config.projectFile, 'utf8').then((fileContent) => {
         return ObjectAssignDeep(JSON.parse(fileContent), content);
     }).then((mergedFileContent) => {
         return pfile.writeFileAsync(self.config.projectFile, JSON.stringify(mergedFileContent, null, '\t'));
@@ -310,11 +317,18 @@ SnProject.prototype.setConfig = function (content) {
 };
 
 SnProject.prototype.writeFile = function (filePath, content) {  
-    var self = this;
-    console.log("write to ", path.join(self.config.dir, filePath));
-    return pfile.writeFileAsync(path.join(self.config.dir, filePath), content);
+    const self = this;
+    const file = path.join(self.config.dir, filePath);
+    console.log("write to ", file);
+    return pfile.writeFileAsync(file, content);
 };
 
+SnProject.prototype.readFile = function (...args) {
+    const self = this;
+    const file = path.join.apply(null, [self.config.dir].concat(args));
+    console.log("read from  ", file);
+    return pfile.readFileAsync(file, 'utf8');
+};
 /**
  * get an entityObject by className
  *  this reads from the entities object loaded from the config file

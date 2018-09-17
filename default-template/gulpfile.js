@@ -1,200 +1,298 @@
-var gulp = require('gulp'),
-    jsdoc3 = require('gulp-jsdoc3'),
-    mocha = require('gulp-mocha'),
-    eslint = require('gulp-eslint'),
-    reporter = require('eslint-detailed-reporter'),
-    path = require('path'),
-    fs = require('fs'),
-    mkdirp = require('mkdirp');
+const gulp = require('gulp');
+const jsdoc3 = require('gulp-jsdoc3');
+const mocha = require('gulp-mocha');
+const eslint = require('gulp-eslint');
+const reporter = require('eslint-detailed-reporter');
+const path = require('path');
+const fs = require('fs');
+const mkdirp = require('mkdirp');
+const archiver = require('archiver');
+const uui = require('uuid/v4');
+const rp = require('request-promise');
 
-gulp.Gulp.prototype.__runTask = gulp.Gulp.prototype._runTask;
-gulp.Gulp.prototype._runTask = function (task) {
-    this.currentTask = task;
-    this.__runTask(task);
-};
+const port = (process.env.CICD_WEB_HTTPS_PORT) ? process.env.CICD_WEB_HTTPS_PORT : process.env.CICD_WEB_HTTP_PORT || 8080;
+const hostName = `${(process.env.CICD_WEB_HTTPS_PORT) ? 'https' : 'http'}://${process.env.CICD_WEB_HOST_NAME || 'localhost'}:${port}`;
 
-var config = require('./config/project.json'),
-    jsDocConfig = require('./config/jsdoc.json');
-jsDocConfig.opts.destination = path.resolve(config.application.dir.doc, 'docs');
-jsDocConfig.templates.systemName = config.application.name;
+const Git = require('sn-cicd/lib/git');
 
-var lintConfig = {
-    destination: path.resolve(config.application.dir.doc, 'lint')
-};
+let config = {};
+let taskError;
 
-var onError = function (error) {
-    try {
-        var taskName = gulp.currentTask.name || 'undefined-task';
-        var errorConfig = config.gulp.task[taskName] || {
-            breakOnError: false
-        };
-        if (errorConfig.breakOnError) {
-            this.emit('err');
-            console.error(`ERROR: Gulp failed on task '${taskName}'. Type: '${error.name}', Message: '${error.message}'`);
-            console.error(`Exit process with ${errorConfig.code}`);
-            process.exit(errorConfig.code);
+const git = new Git({
+    dir: path.resolve(__dirname)
+});
 
-        } else {
-            console.warn(`WARN: Gulp failed on task '${taskName}'. Type: '${error.name}', Message: '${error.message}'`);
-        }
-    } catch (e) {
-        console.error('Error handling failed', e);
-    }
+const rpd = rp.defaults({
+    json: true,
+    baseUrl: hostName,
+    gzip: true,
+    strictSSL: false,
+    proxy: false,
+    encoding: "utf8"
+});
+
+
+const onError = function (error) {
+    taskError = error;
+    //console.log(error);
     this.emit('end');
 };
 
-gulp.task('init', function () {
-    var self = this;
-    try {
-        mkdirp.sync(jsDocConfig.opts.destination);
-        mkdirp.sync(lintConfig.destination);
-    } catch (e) {
-        onError.call(this, e);
+const buildDone = function () {
+    //console.log("buildDone"); //, task, commitId);
+    return rpd.post({
+        url: 'build_done', body: config
+    }).then((results) => {
+        console.log('Build Done:', results);
+    });
+};
+
+
+const uploadResults = function ({commitId, zip, task, testPass}) {
+    /*console.log("Upload Results", {
+        commitId: commitId,
+        task: task,
+        testPass: testPass ? 'true':'false'
+    }); //, task, commitId);
+    */
+    return rpd.post({
+        url: 'build_result', formData: {
+            zip: zip,
+            data: JSON.stringify({
+                commitId: commitId,
+                task: task,
+                testPass: testPass
+            })
+        }
+    }).then((results) => {
+        console.log("Upload Results", task, 'Upload successful!  Server responded with:', results);
+    });
+};
+
+const taskStart = ({task}) => {
+    console.log(`### Starting Task '${task}'`);
+    taskError = undefined;
+};
+
+const taskStop = ({ task }) => {
+
+    console.log(`### Task Ended '${task}'`);
+
+    const taskConfig = config[task];
+    if (!taskConfig) {
+        console.warn(`No config found for task '${task}'`);
+        return;
     }
-});
+    if (taskError)
+        console.warn(`WARN: Gulp failed on task '${task}'. Type: '${taskError.name}', Message: '${taskError.message}'`);
 
-gulp.task('eslint', ['init'], function () {
-    var self = this;
-    var esLintReport = path.resolve(lintConfig.destination, 'index.html');
-    console.log('EsLint to destination:', esLintReport);
+    taskConfig.task = task;
+    taskConfig.testPass = (taskError) ? false : true;
+        
+    return zip(taskConfig).then((zipFile) => {
+        return uploadResults({
+            zip: fs.createReadStream(zipFile),
+            commitId: config.commitId,
+            task: taskConfig.task,
+            testPass: taskConfig.testPass
+        });        
+    }).catch((e) => {
+        console.error(e.message || e);
+    });
+};
 
-    // ESLint ignores files with "node_modules" paths.
-    // So, it's best to have gulp ignore the directory as well.
-    // Also, Be sure to return the stream from the task;
-    // Otherwise, the task may end before the stream has finished.
-    return gulp.src(config.lint.concat('!node_modules/**'))
-        // eslint() attaches the lint output to the "eslint" property
-        // of the file object so it can be used by other modules.
-        .pipe(eslint({
-            fix: true,
-            extends: 'eslint:recommended',
-            rules: {
-                'valid-jsdoc': 'warn',
-                'no-alert': 'error',
-                'no-bitwise': 'off',
-                'camelcase': 'warn',
-                'curly': 'warn',
-                'eqeqeq': 'warn',
-                'no-eq-null': 'off',
-                'guard-for-in': 'warn',
-                'no-empty': 'warn',
-                'no-use-before-define': 'off',
-                'no-obj-calls': 'warn',
-                'no-unused-vars': 'off',
-                'new-cap': 'warn',
-                'no-shadow': 'off',
-                'strict': 'off',
-                'no-invalid-regexp': 'error',
-                'comma-dangle': 'warn',
-                'no-undef': 'warn',
-                'no-new': 'warn',
-                'no-extra-semi': 'warn',
-                'no-debugger': 'warn',
-                'no-caller': 'warn',
-                'semi': 'warn',
-                'quotes': 'off',
-                'no-unreachable': 'warn'
-            },
-            globals: [
-                'jQuery',
-                '$',
-                'gs', 'sn_ws', 'Class', 'GlideDateTime', 'GlideRecord', 'GlideProperties',
-                'GlideAggregate', 'GlideFilter', 'GlideTableHierarchy', 'TableUtils', 'JSON', 'Packages', 'g_form', 'current', 'previous',
-                'g_navigation', 'g_document', 'GlideDialogWindow', 'GlideAjax', 'gel', 'request', 'response', 'parent', 'angular', '$j', 'action', 'g_list',
-                'GlideModal', 'GwtMessage', 'g_i18n'
-            ],
-            envs: [
-                'node',
-                'browser',
-                'angular'
-            ]
-        }))
-        // eslint.format() outputs the lint results to the console.
-        // Alternatively use eslint.formatEach() (see Docs).
-        .pipe(eslint.format(reporter, function (results) {
-            fs.writeFileSync(esLintReport, results);
-        }))
-        // To have the process exit with an error code (1) on
-        // lint error, return the stream and pipe to failAfterError last.
-        //.pipe(eslint.failAfterError());
+const zip = function ({dir, task}) {
+    return new Promise((resolve, reject) => {
+        if (!dir)
+            reject(`Gulp task '${task}' has no directory`);
+        
+        const output = fs.createWriteStream(path.join(dir, '../', `${task}.zip`));
+        output.on('close', function () {
+             console.log("ZIP:", task, archive.pointer() + ' total bytes');
+             console.log("ZIP:", task, 'archiver has been finalized and the output file descriptor has closed.');
+             resolve(path.join(dir, '../', `${task}.zip`));
+        });
+        
+        const archive = archiver('zip', {
+             zlib: {
+                 level: 9
+             }
+        });
+        archive.pipe(output);
 
-        .pipe(eslint.failAfterError())
-        .on('error', onError);
+        console.log("ZIP:", task, "adding folder ", dir);
 
-});
+        archive.directory(dir, false);
+        archive.finalize();
+    });
+ /*
+    if (taskConfig && taskConfig.dir) {
+        
+        // create a file to stream archive data to.
+        var output = fs.createWriteStream(path.join(taskConfig.dir, '../', `${task}.zip`));
+        var archive = archiver('zip', {
+            zlib: {
+                level: 9
+            }
+        });
 
-gulp.task('jsdoc3', ['eslint'], function (done) {
-    var self = this;
-    console.log('JsDoc to destination:', jsDocConfig.opts.destination);
-    gulp.src(['README.md', './sn/**/*.js', './sn/**/*.jsdoc'], {
-            read: false
-        })
-        .pipe(jsdoc3(jsDocConfig, function () {
-            console.log('\tdone');
-            done();
-        })).on('error', onError);
-});
+        // listen for all archive data to be written
+        // 'close' event is fired only when a file descriptor is involved
+        output.on('close', function () {
+            console.log(archive.pointer() + ' total bytes');
+            console.log('archiver has been finalized and the output file descriptor has closed.');
+            callback(path.join(taskConfig.dir, '../', `${task}.zip`));
+        });
 
-gulp.task('test', ['jsdoc3'], function (done) {
-    var self = this;
-    return gulp.src(['test/*.js'], {
-            read: false
-        })
-        .pipe(mocha({
-            reporter: 'mochawesome', // 'xunit' 'spec'
-            reporterOptions: {
-                reportDir: path.resolve(config.application.dir.doc, 'test'),
-                reportFilename: 'index.html',
-                reportTitle: `${config.application.name} - ${config.updateSet.name}`,
-                reportPageTitle: 'ATF Results',
-                quiet: true,
-                json: true,
-                inline: false,
-                code: false
-            },
-            timeout: 30000,
-            delay: true
-        })).on('error', onError);
-});
+       
+        
 
+        // This event is fired when the data source is drained no matter what was the data source.
+        // It is not part of this library but rather from the NodeJS Stream API.
+        // @see: https://nodejs.org/api/stream.html#stream_event_end
+        output.on('end', function () {
+            console.log('Data has been drained');
+        });
+
+        // good practice to catch warnings (ie stat failures and other non-blocking errors)
+        archive.on('warning', function (err) {
+            if (err.code === 'ENOENT') {
+                // log warning
+            } else {
+                // throw error
+                throw err;
+            }
+        });
+
+        // good practice to catch this error explicitly
+        archive.on('error', function (err) {
+            throw err;
+        });
+        
+        
+        // pipe archive data to the file
+        archive.pipe(output);
+        
+        console.log("adding folder ", taskConfig.dir);
+
+        archive.directory(taskConfig.dir, false);
+        archive.finalize();
+       
+    }
+*/
+};
+
+gulp.on('task_start', taskStart);
+gulp.on('task_stop', taskStop);
 /*
-    mocha report as XML
-*/
-gulp.task('test-xunit', ['jsdoc3'], function () {
-    return gulp.src(['test/*.js'], {
-            read: false
-        })
-        .pipe(mocha({
-            reporter: 'xunit', // 'xunit' 'spec'
-            reporterOptions: {
-                output: path.resolve(config.application.dir.doc, 'mocha-report.xml')
-            },
-            timeout: 30000,
-            delay: true
-        })).on('error', onError);
+gulp.on('start', function (e) {
+    console.log('start', e);
 });
-
-gulp.task('build', ['test'], function () {});
-
-gulp.task('default', ['build'], function () {
-
+gulp.on('err', function (e) {
+    console.log('err', e);
 });
-
-
-/* 
-// NOTES
-
-// call JsDoc directly
-gulp.task('docs', function (done) {
-    var child_exec = require('child_process').exec;
-    child_exec('node ./node_modules/jsdoc/jsdoc.js ./sn -c ./config/jsdoc.json -P ./package.json -d "' + config.opts.destination + '"', undefined, done); // node_modules\\.bin\\jsdoc -c jsdocconf.json -r
-});
-
-// this would be an alterlative to jsDoc3...
-
-var gulpDocumentation = require('gulp-documentation');
-gulp.task('doc', function () {
-    return gulp.src(['./sn/*.js'], { read: false })
-    .pipe(gulpDocumentation('html', {})).pipe(gulp.dest('html-documentation'));
+gulp.on('task_err', function (e) {
+    console.log('task_err', e);
 });
 */
+gulp.task('default', function () {
+
+    /*  TODO:
+        how to get the config if git is not used ??
+    */
+    return git.getLastCommitId().then((commitId) => {
+        //console.log('commitId', commitId);
+        return rpd.get(`build_config/${commitId}`).then((buildConfig) => ({
+            commitId: commitId, buildConfig: buildConfig
+        }));
+    }).then(({commitId, buildConfig}) => {
+    
+        config = buildConfig;
+        config.commitId = commitId;
+
+        const tempDir = require('os').tmpdir();
+        const uuid = uui();
+        
+        config.lint.dir = path.join(tempDir, uuid, 'lint');
+        config.doc.dir = path.join(tempDir, uuid, 'doc');
+        config.test.dir = path.join(tempDir, uuid, 'test');
+
+        //console.log(config);
+        
+        gulp.task('init', function () {
+            try {
+                mkdirp.sync(config.doc.dir);
+                mkdirp.sync(config.lint.dir);
+                mkdirp.sync(config.test.dir);
+            } catch (e) {
+                onError.call(this, e);
+            }
+        });
+
+        gulp.task('lint', ['init'], function () {
+            var self = this;
+            var esLintReport = path.resolve(config.lint.dir, 'index.html');
+            console.log('EsLint to destination:', esLintReport);
+
+            // ESLint ignores files with "node_modules" paths.
+            // So, it's best to have gulp ignore the directory as well.
+            // Also, Be sure to return the stream from the task;
+            // Otherwise, the task may end before the stream has finished.
+            return gulp.src(config.lint.files.concat('!node_modules/**'))
+                // eslint() attaches the lint output to the "eslint" property
+                // of the file object so it can be used by other modules.
+                .pipe(eslint(config.lint.config))
+                // eslint.format() outputs the lint results to the console.
+                // Alternatively use eslint.formatEach() (see Docs).
+                .pipe(eslint.format(reporter, function (results) {
+                    fs.writeFileSync(esLintReport, results);
+                }))
+                // To have the process exit with an error code (1) on
+                // lint error, return the stream and pipe to failAfterError last.
+                //.pipe(eslint.failAfterError());
+
+                .pipe(eslint.failAfterError())
+                .on('error', onError);
+
+        });
+
+        gulp.task('doc', ['lint'], function (done) {
+            config.doc.config.opts.destination = config.doc.dir;
+            console.log('JsDoc to destination:', config.doc.config.opts.destination);
+            gulp.src(['README.md', './sn/**/*.js', './sn/**/*.jsdoc'], {
+                    read: false
+                })
+                .pipe(jsdoc3(config.jsdoc, function () {
+                    done();
+                })).on('error', onError);
+        });
+
+        gulp.task('test', ['doc'], function (done) {
+            var self = this;
+            return gulp.src(['test/*.js'], {
+                    read: false
+                })
+                .pipe(mocha({
+                    reporter: 'mochawesome', // 'xunit' 'spec'
+                    reporterOptions: {
+                        reportDir: config.test.dir,
+                        reportFilename: 'index.html',
+                        reportTitle: config.test.title,
+                        reportPageTitle: 'ATF Results',
+                        quiet: true,
+                        json: true,
+                        inline: false,
+                        code: false
+                    },
+                    timeout: 30000,
+                    delay: true
+                })).on('error', onError);
+        });
+
+        gulp.task('build', ['test'], buildDone);
+
+    }).then(() => {
+        gulp.start('build');
+    });
+
+});

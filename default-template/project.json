@@ -22,31 +22,9 @@
 
     "atf": {
         "suites": [],
-        "tests": [],
-        "browser": {
-            "bin": "chrome.exe",
-            "arg": []
-        },
-        "updateSetOnly": false,
-        "credentials": {
-            "name": null,
-            "oauth": {
-                "accessToken": null,
-                "refreshToken": null,
-                "clientId": null,
-                "clientSecret": null
-            }
-        }
+        "tests": []
     },
     "lint": [
         "*/**/*.js"
-    ],
-    "build": {
-        "mode": "",
-        "sequence": 0
-    },
-    "application": {
-        "id": "00000000000000000000000000000000",
-        "name": "dummy"
-    }
+    ]
 }

@@ -13,10 +13,17 @@
     "mocha": "^2.4.5",
     "mochawesome": "3.0.2",
     "puppeteer": "1.5.0",
-    "sn-rest-client": "github:bmoers/sn-rest-client#semver:1.x"
+    "request": "2.88.0",
+    "request-promise": "4.2.2",
+    "sn-rest-client": "github:bmoers/sn-rest-client#semver:1.x",
+    "sn-cicd": "github:bmoers/sn-cicd#semver:^2",
+    "uuid": "3.3.2"
   },
   "scripts": {
     "build": "gulp",
     "test": "gulp test"
+  },
+  "dependencies": {
+    "archiver": "3.0.0"
   }
 }

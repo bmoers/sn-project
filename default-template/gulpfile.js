@@ -1,11 +1,12 @@
+require('dotenv').config();
+
 const gulp = require('gulp');
 const jsdoc3 = require('gulp-jsdoc3');
 const mocha = require('gulp-mocha');
 const eslint = require('gulp-eslint');
 const reporter = require('eslint-detailed-reporter');
 const path = require('path');
-const fs = require('fs');
-const mkdirp = require('mkdirp');
+const fs = require('fs-extra');
 const archiver = require('archiver');
 const uui = require('uuid/v4');
 const rp = require('request-promise');
@@ -14,6 +15,10 @@ const port = (process.env.CICD_WEB_HTTPS_PORT) ? process.env.CICD_WEB_HTTPS_PORT
 const hostName = `${(process.env.CICD_WEB_HTTPS_PORT) ? 'https' : 'http'}://${process.env.CICD_WEB_HOST_NAME || 'localhost'}:${port}`;
 
 const Git = require('sn-cicd/lib/git');
+
+const ROUTE_BUILD_COMPLETE = '/build/complete';
+const ROUTE_TASK_COMPLETE = '/build/task';
+const ROUTE_BUILD_CONFIG = '/build/config';
 
 let config = {};
 let taskError;
@@ -28,7 +33,10 @@ const rpd = rp.defaults({
     gzip: true,
     strictSSL: false,
     proxy: false,
-    encoding: "utf8"
+    encoding: "utf8",
+    headers: {
+        'x-access-token': process.env.CICD_BUILD_ACCESS_TOKEN
+    }
 });
 
 
@@ -41,7 +49,7 @@ const onError = function (error) {
 const buildDone = function () {
     //console.log("buildDone"); //, task, commitId);
     return rpd.post({
-        url: 'build_done', body: config
+        url: ROUTE_BUILD_COMPLETE, body: config
     }).then((results) => {
         console.log('Build Done:', results);
     });
@@ -56,7 +64,7 @@ const uploadResults = function ({commitId, zip, task, testPass}) {
     }); //, task, commitId);
     */
     return rpd.post({
-        url: 'build_result', formData: {
+        url: ROUTE_TASK_COMPLETE, formData: {
             zip: zip,
             data: JSON.stringify({
                 commitId: commitId,
@@ -95,7 +103,13 @@ const taskStop = ({ task }) => {
             commitId: config.commitId,
             task: taskConfig.task,
             testPass: taskConfig.testPass
-        });        
+        }).then(() => {
+            console.log(`Remove file '${zipFile}'`);
+            return fs.remove(zipFile);
+        });
+    }).then(() => {
+        console.log(`Remove file '${taskConfig.dir}'`);
+        return fs.remove(taskConfig.dir);
     }).catch((e) => {
         console.error(e.message || e);
     });
@@ -125,69 +139,14 @@ const zip = function ({dir, task}) {
         archive.directory(dir, false);
         archive.finalize();
     });
- /*
-    if (taskConfig && taskConfig.dir) {
-        
-        // create a file to stream archive data to.
-        var output = fs.createWriteStream(path.join(taskConfig.dir, '../', `${task}.zip`));
-        var archive = archiver('zip', {
-            zlib: {
-                level: 9
-            }
-        });
-
-        // listen for all archive data to be written
-        // 'close' event is fired only when a file descriptor is involved
-        output.on('close', function () {
-            console.log(archive.pointer() + ' total bytes');
-            console.log('archiver has been finalized and the output file descriptor has closed.');
-            callback(path.join(taskConfig.dir, '../', `${task}.zip`));
-        });
-
-       
-        
-
-        // This event is fired when the data source is drained no matter what was the data source.
-        // It is not part of this library but rather from the NodeJS Stream API.
-        // @see: https://nodejs.org/api/stream.html#stream_event_end
-        output.on('end', function () {
-            console.log('Data has been drained');
-        });
-
-        // good practice to catch warnings (ie stat failures and other non-blocking errors)
-        archive.on('warning', function (err) {
-            if (err.code === 'ENOENT') {
-                // log warning
-            } else {
-                // throw error
-                throw err;
-            }
-        });
-
-        // good practice to catch this error explicitly
-        archive.on('error', function (err) {
-            throw err;
-        });
-        
-        
-        // pipe archive data to the file
-        archive.pipe(output);
-        
-        console.log("adding folder ", taskConfig.dir);
-
-        archive.directory(taskConfig.dir, false);
-        archive.finalize();
-       
-    }
-*/
+ 
 };
+
 
 gulp.on('task_start', taskStart);
 gulp.on('task_stop', taskStop);
 /*
-gulp.on('start', function (e) {
-    console.log('start', e);
-});
+
 gulp.on('err', function (e) {
     console.log('err', e);
 });
@@ -197,12 +156,14 @@ gulp.on('task_err', function (e) {
 */
 gulp.task('default', function () {
 
+    console.log(`\n${'* '.repeat(42)}\n\tCICD Endpoint: ${hostName}\n${'* '.repeat(42)}\n`);
+
     /*  TODO:
         how to get the config if git is not used ??
     */
     return git.getLastCommitId().then((commitId) => {
         //console.log('commitId', commitId);
-        return rpd.get(`build_config/${commitId}`).then((buildConfig) => ({
+        return rpd.get(`${ROUTE_BUILD_CONFIG}/${commitId}`).then((buildConfig) => ({
             commitId: commitId, buildConfig: buildConfig
         }));
     }).then(({commitId, buildConfig}) => {
@@ -213,6 +174,7 @@ gulp.task('default', function () {
         const tempDir = require('os').tmpdir();
         const uuid = uui();
         
+        config.tempDir = path.join(tempDir, uuid);
         config.lint.dir = path.join(tempDir, uuid, 'lint');
         config.doc.dir = path.join(tempDir, uuid, 'doc');
         config.test.dir = path.join(tempDir, uuid, 'test');
@@ -220,10 +182,11 @@ gulp.task('default', function () {
         //console.log(config);
         
         gulp.task('init', function () {
+
             try {
-                mkdirp.sync(config.doc.dir);
-                mkdirp.sync(config.lint.dir);
-                mkdirp.sync(config.test.dir);
+                fs.mkdirpSync(config.doc.dir);
+                fs.mkdirpSync(config.lint.dir);
+                fs.mkdirpSync(config.test.dir);
             } catch (e) {
                 onError.call(this, e);
             }
@@ -262,7 +225,7 @@ gulp.task('default', function () {
             gulp.src(['README.md', './sn/**/*.js', './sn/**/*.jsdoc'], {
                     read: false
                 })
-                .pipe(jsdoc3(config.jsdoc, function () {
+                .pipe(jsdoc3(config.doc.config, function () {
                     done();
                 })).on('error', onError);
         });

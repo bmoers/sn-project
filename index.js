@@ -6,7 +6,7 @@ var Promise = require('bluebird'),
 
 var pfile = require('./lib/project-file');
 var sanitize = require("sanitize-filename"),
-    ObjectAssignDeep = require('object-assign-deep'),
+    assign = require('object-assign-deep'),
     crypto = require('crypto'),
     copy = require('recursive-copy');
 
@@ -22,7 +22,7 @@ var Datastore = require('nedb'),
  **/
 function SnProject(options) {
     var self = this;
-    self.config = Object.assign({
+    self.config = assign({
         dir: require('os').tmpdir(),
         appName: 'noname',
         dbName: 'snproject',
@@ -30,6 +30,10 @@ function SnProject(options) {
         includeUnknownEntities: false,
         organization: 'organization',
         templateDir: path.join(__dirname, 'default-template'),
+        templates: [{
+            source: 'README.md',
+            target: 'README.md'
+        }],
         defaultEntitiesFile: path.resolve(__dirname, 'config', 'entities.json')
     }, options);
     
@@ -52,7 +56,6 @@ function SnProject(options) {
     });
 
     //console.log('SnProject ready');
-    self.config.projectFile = path.join(self.config.dir, 'config/project.json');
 }
 
 
@@ -189,35 +192,12 @@ SnProject.prototype.setup = function () {
         path.resolve(rootDir, 'test')
     ];
 
-    var copyFiles = [{
-            from: path.resolve(templateDir, 'atf-wrapper.js'),
-            to: path.resolve(rootDir, 'test', 'atf-wrapper.js')
-        },
-        {
-            from: path.resolve(templateDir, 'npmrc'),
-            to: path.resolve(rootDir, '.npmrc')
-        },
-        {
-            from: path.resolve(templateDir, 'gulpfile.js'),
-            to: path.resolve(rootDir, 'gulpfile.js')
-        },
-        {
-            from: path.resolve(templateDir, 'jsdoc.json'),
-            to: path.resolve(rootDir, 'config', 'jsdoc.json')
-        },
-        {
-            from: path.resolve(templateDir, 'project.json'),
-            to: path.resolve(rootDir, 'config', 'project.json')
-        },
-        {
-            from: path.resolve(templateDir, 'eslint.json'),
-            to: path.resolve(rootDir, 'config', 'eslint.json')
-        },
-        {
-            from: path.resolve(templateDir, 'gulp.json'),
-            to: path.resolve(rootDir, 'config', 'gulp.json')
-        }
-    ];
+    var copyFiles = self.config.templates.map((template) => {
+        return {
+            from: path.resolve(templateDir, template.source),
+            to: path.resolve(rootDir, template.target)
+        };
+    });
 
     /*
         copy the current node_modules folder to the project directory.
@@ -299,22 +279,6 @@ SnProject.prototype.deleteFileById = function (sysId) {
     return self.db.removeAsync({ sysId: sysId });
 };
 
-SnProject.prototype.getConfig = function () {
-    var self = this;
-    return pfile.readFileAsync(self.config.projectFile, 'utf8').then((fileContent) => {
-        return JSON.parse(fileContent);
-    });
-};
-
-SnProject.prototype.setConfig = function (content) {
-    const self = this;
-    //console.dir(content, { depth: null, colors: true });
-    return pfile.readFileAsync(self.config.projectFile, 'utf8').then((fileContent) => {
-        return ObjectAssignDeep(JSON.parse(fileContent), content);
-    }).then((mergedFileContent) => {
-        return pfile.writeFileAsync(self.config.projectFile, JSON.stringify(mergedFileContent, null, '\t'));
-    });
-};
 
 SnProject.prototype.writeFile = function (filePath, content) {  
     const self = this;
@@ -348,7 +312,7 @@ SnProject.prototype.getEntity = function (className) {
     /*
         default entity structure
     */
-    return ObjectAssignDeep({
+    return assign({
         className: className,
         name: null,
         key: null,
@@ -429,7 +393,7 @@ SnProject.prototype.getEntityRequestParam = function (className) {
     });
 
 
-    entity.requestArguments = ObjectAssignDeep({}, requestArguments, {
+    entity.requestArguments = assign({}, requestArguments, {
         className: entity.className,
         fieldNames: fieldNames,
         displayValue: dv,
@@ -783,7 +747,7 @@ var _copyAlias = function (entity) {
                 _copyAlias.call(self, aliasEntity);
             } else {
                 // create the alias entity
-                _setEntity.call(self, ObjectAssignDeep({}, entity, { className: aliasClassName, name: entity.name.concat(':').concat(aliasClassName), alias: null, copyOfClassName: entity.className }));
+                _setEntity.call(self, assign({}, entity, { className: aliasClassName, name: entity.name.concat(':').concat(aliasClassName), alias: null, copyOfClassName: entity.className }));
             }
         });
     }

@@ -1,6 +1,6 @@
 {
   "name": "sn-project",
-  "version": "2.0.4",
+  "version": "2.0.5",
   "description": "Replicate records from Service-Now to disc.",
   "main": "index.js",
   "scripts": {
@@ -10,22 +10,13 @@
   "license": "LGPL-3.0",
   "dependencies": {
     "bluebird": "3.5.1",
-    "chai": "^3.5.0",
     "delete-empty": "2.0.0",
-    "eslint-detailed-reporter": "0.7.3",
     "fs-extra": "5.0.0",
-    "gulp": "3.9.1",
-    "gulp-eslint": "4.0.2",
-    "gulp-jsdoc3": "1.0.1",
-    "gulp-mocha": "5.0.0",
     "mkdirp": "0.5.1",
-    "mocha": "^2.4.5",
-    "mochawesome": "3.0.2",
     "nedb": "1.8.0",
     "object-assign-deep": "0.4.0",
     "recursive-copy": "2.0.9",
-    "sanitize-filename": "1.6.1",
-    "sn-rest-client": "github:bmoers/sn-rest-client#semver:^1.0.0"
+    "sanitize-filename": "1.6.1"
   },
   "directories": {
     "lib": "lib"

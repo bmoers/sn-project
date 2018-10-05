@@ -227,7 +227,6 @@ var openTestRunner = function (config, url) {
         });
     }).then((browser) => {
         return browser.newPage().then((page) => {
-
             return page.setExtraHTTPHeaders({
                 'Authorization': authorization
             }).then(() => {
@@ -251,10 +250,12 @@ var openTestRunner = function (config, url) {
                     });
                 });
             });
-        }).delay(1000).then(() => {
-            console.log("browser started and ready");
+        }).then(() => {
             return browser;
         });
+    }).delay(1000).then((browser) => {
+        console.log("browser started and ready");
+        return browser;
     });
 };
 

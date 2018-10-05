@@ -228,7 +228,7 @@ var openTestRunner = function (config, url) {
     }).then((browser) => {
         return browser.newPage().then((page) => {
             return page.setExtraHTTPHeaders({
-                'Authorization': authorization
+                'Authorization': 'Bearer '.concat(credentials.accessToken)
             }).then(() => {
                 // get a session cookie without being redirected to SAML endpoint
                 return page.goto(`${host}/api/now/table/sys_user/0`, {

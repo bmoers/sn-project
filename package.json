@@ -1,6 +1,6 @@
 {
   "name": "sn-project",
-  "version": "2.0.9",
+  "version": "2.0.10",
   "description": "Replicate records from Service-Now to disc.",
   "main": "index.js",
   "scripts": {

@@ -231,7 +231,7 @@ var openTestRunner = function (config, url) {
                 'Authorization': 'Bearer '.concat(credentials.accessToken)
             }).then(() => {
                 // get a session cookie without being redirected to SAML endpoint
-                return page.goto(`${host}/api/now/table/sys_user/0`, {
+                return page.goto(`${config.host.name}/api/now/table/sys_user/0`, {
                     waitUntil: 'networkidle2'
                 });
             }).then(() => {

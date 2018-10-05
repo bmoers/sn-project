@@ -229,26 +229,32 @@ var openTestRunner = function (config, url) {
         return browser.newPage().then((page) => {
 
             return page.setExtraHTTPHeaders({
-                'Authorization': 'Bearer '.concat(credentials.accessToken)
+                'Authorization': authorization
             }).then(() => {
-                return page.setUserAgent('Mozilla/5.0 (Windows; U; Windows NT 6.1; rv:2.2) Gecko/20110201');
+                // get a session cookie without being redirected to SAML endpoint
+                return page.goto(`${host}/api/now/table/sys_user/0`, {
+                    waitUntil: 'networkidle2'
+                });
             }).then(() => {
+                page.close();
+            });
+        }).then(() => {
+            return browser.newPage().then((page) => {
                 return page.setViewport({
                     width: 1400,
                     height: 800
-                });
-            }).then(() => {
-                return page.goto(url, {
-                    waitUntil: 'networkidle2'
+                }).then(() => {
+                    return page.setUserAgent('Mozilla/5.0 (Windows; U; Windows NT 6.1; rv:2.2) Gecko/20110201');
+                }).then(() => {
+                    return page.goto(url, {
+                        waitUntil: 'networkidle2'
+                    });
                 });
             });
-
-        }).then(() => {
+        }).delay(1000).then(() => {
+            console.log("browser started and ready");
             return browser;
         });
-    }).delay(1000).then((browser) => {
-        console.log("browser started and ready");
-        return browser;
     });
 };
 

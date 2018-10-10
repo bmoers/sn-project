@@ -75,7 +75,11 @@ SnProject.prototype.install = function () {
     var spawn = require('child_process').spawn;
     var os = require('os');
 
-    var childProcess = spawn((os.platform() === 'win32' ? 'npm.cmd' : 'npm'), ['install'], { cwd: self.config.dir, detached: false });
+    var childProcess = spawn((os.platform() === 'win32' ? 'npm.cmd' : 'npm'), ['install'], {
+        cwd: self.config.dir,
+        detached: false,
+        env: process.env
+    });
 
     return new Promise(function (resolve, reject) {
 
@@ -83,24 +87,20 @@ SnProject.prototype.install = function () {
 
         var log = '';
         childProcess.stdout.on('data', function (buff) {
-            log += buff.toString();
+            log += buff.toString().replace(/\n+/, '\n');
         });
         childProcess.stderr.on('data', function (buff) {
-            log += buff.toString();
+            log += buff.toString().replace(/\n+/, '\n');
         });
 
         childProcess.on('exit', function (code) {
-
             console.log(`npm install process exited with code: ${code}`);
-
             if (code > 0) {
-                reject({
+                return reject({
                     failed: true,
                     log: log
                 });
-                return;
             }
-
             resolve({
                 failed: false,
                 log: log
@@ -118,63 +118,33 @@ SnProject.prototype.build = function () {
 
     var childProcess = spawn((os.platform() === 'win32' ? 'npm.cmd' : 'npm'), ['run-script', 'build'], { // build
         cwd: self.config.dir,
-        detached: false
-    }); 
+        detached: false,
+        env: process.env
+    });
 
-    return self.getConfig().then((config) => {
-        var gulpTask = config.gulp.task;
+    return new Promise(function (resolve, reject) {
 
-        return new Promise(function (resolve, reject) {
+        console.log("build and test from", self.config.dir);
 
-            console.log("build and test from", self.config.dir);
+        var log = '';
+        childProcess.stdout.on('data', function (buff) {
+            log += buff.toString().replace(/\n+/, '\n');
+        });
+        childProcess.stderr.on('data', function (buff) {
+            log += buff.toString().replace(/\n+/, '\n');
+        });
 
-            var log = '',
-                data = '',
-                error = '';
-            childProcess.stdout.on('data', function (buff) {
-                var tmp = buff.toString().replace(/\n+/, '\n');
-                //console.log(tmp);
-                data += tmp;
-                log += tmp;
-            });
-            childProcess.stderr.on('data', function (buff) {
-                var tmp = buff.toString().replace(/\n+/, '\n');
-                //console.error(tmp);
-                error += tmp;
-                log += tmp;
-            });
-
-            childProcess.on('exit', function (code) {
-                
-                console.log(`build process exited with code: ${code}`);
-                
-                var failed = false;
-
-                Object.keys(gulpTask).forEach((key) => {
-                    var task = gulpTask[key];
-                    task.passed = (code === 0 || task.code < code);
-                    if (task.breakOnError && !failed) {
-                        failed = {
-                            name: key,
-                            task: task
-                        };
-                    }
-                });
-
-                if (code > 0) {
-                    reject({
-                        failed: failed,
-                        tasks: gulpTask,
-                        log: log
-                    });
-                    return;
-                }
-
-                resolve({
-                    failed: failed,
-                    tasks: gulpTask,
+        childProcess.on('exit', function (code) {
+            console.log(`build process exited with code: ${code}`);
+            if (code > 0) {
+                return reject({
+                    failed: true,
                     log: log
                 });
+            }
+            resolve({
+                failed: false,
+                log: log
             });
         });
     });
@@ -280,11 +250,11 @@ SnProject.prototype.deleteFileById = function (sysId) {
 };
 
 
-SnProject.prototype.writeFile = function (filePath, content) {  
+SnProject.prototype.writeFile = function (filePath, content, options) {  
     const self = this;
-    const file = path.join(self.config.dir, filePath);
+    const file = (Array.isArray(filePath)) ? path.join.apply(null, [self.config.dir].concat(filePath)) : path.join(self.config.dir, filePath);
     console.log("write to ", file);
-    return pfile.writeFileAsync(file, content);
+    return pfile.writeFileAsync(file, content, options).then(()=> file);
 };
 
 SnProject.prototype.readFile = function (...args) {

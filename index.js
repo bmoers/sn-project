@@ -505,72 +505,90 @@ SnProject.prototype.save = function (file) {
                 fileUUID.push.apply(fileUUID, subFolder.split(/\/|\\/));
             }
 
-            var fields = entity.fields || {},
-                fieldKeys = Object.keys(fields);
+            if (entity.json) {
+                // know entity in JSON format
 
-            if (fieldKeys.length > 1) {
-                // value part of the path
-                fileUUID.push.apply(fileUUID, [keyValue]);
-            }
+                let extension = '.json';
+                let fileName = file.sys_id.value || file.sys_id;
 
-            fieldKeys.forEach(function (fieldName) {
+                fileObjectArray.push({
+                    sysId: file.sys_id.value || file.sys_id,
+                    fileUUID: fileUUID.concat(fileName.concat(extension)),
+                    body: JSON.stringify(file, null, 2),
+                    hash: crypto.createHash('md5').update((file.sys_updated_on.value || file.sys_updated_on || file.sys_created_on.value || file.sys_created_on)).digest('hex'),
+                    comments: null,
+                    jsDoc: null,
+                    updatedBy: file.____.updatedBy
+                });
 
-                var extension = fields[fieldName];
-                var value = (typeof file[fieldName] == 'object' && file[fieldName] !== null) ? file[fieldName].value : file[fieldName];
+            } else {
+                // know entity in text format
+                var fields = entity.fields || {},
+                    fieldKeys = Object.keys(fields);
 
-                // only create a file if the field has value
-                if (value && value.length) {
-                    
-                    var currentFileUUID = fileUUID.concat([((fieldKeys.length > 1) ? fieldName : keyValue).concat(extension)]); // value part of the file
-                    // sanitize all path segments
-                    currentFileUUID = currentFileUUID.map(function (val) {
-                        return sanitize(val);
-                    });
+                if (fieldKeys.length > 1) {
+                    // value part of the path
+                    fileUUID.push.apply(fileUUID, [keyValue]);
+                }
 
-                    var comments = [];
-                    comments.push('Application : '.concat(applicationName));
-                    comments.push('ClassName   : '.concat(className));
-                    if (file.sys_created_on)
-                        comments.push('Created On  : '.concat(file.sys_created_on.value || file.sys_created_on));
-                    if (file.sys_created_by)
-                        comments.push('Created By  : '.concat(file.sys_created_by.value || file.sys_created_by));
-                    if (file.sys_updated_on)
-                        comments.push('Updated On  : '.concat(file.sys_updated_on.value || file.sys_updated_on));
-                    if (file.sys_updated_by)
-                        comments.push('Updated By  : '.concat(file.sys_updated_by.value || file.sys_updated_by));
-                    
-                    if (file.____.hostName)
-                        comments.push('URL         : - '.concat('/').concat(className).concat('.do?sys_id=').concat(sysId));    
-                    
-                    if (extension == '.js') {
-                        value = '/* \n * '.concat(comments.join('\n * ')).concat('\n */\n').concat(value);
-                    } else if (/html$/.test(extension)) {
-                        value = '<!-- \n * '.concat(comments.join('\n * ')).concat('\n-->\n').concat(value);
+                fieldKeys.forEach(function (fieldName) {
+
+                    var extension = fields[fieldName];
+                    var value = (typeof file[fieldName] == 'object' && file[fieldName] !== null) ? file[fieldName].value : file[fieldName];
+
+                    // only create a file if the field has value
+                    if (value && value.length) {
+
+                        var currentFileUUID = fileUUID.concat([((fieldKeys.length > 1) ? fieldName : keyValue).concat(extension)]); // value part of the file
+                        // sanitize all path segments
+                        currentFileUUID = currentFileUUID.map(function (val) {
+                            return sanitize(val);
+                        });
+
+                        var comments = [];
+                        comments.push('Application : '.concat(applicationName));
+                        comments.push('ClassName   : '.concat(className));
+                        if (file.sys_created_on)
+                            comments.push('Created On  : '.concat(file.sys_created_on.value || file.sys_created_on));
+                        if (file.sys_created_by)
+                            comments.push('Created By  : '.concat(file.sys_created_by.value || file.sys_created_by));
+                        if (file.sys_updated_on)
+                            comments.push('Updated On  : '.concat(file.sys_updated_on.value || file.sys_updated_on));
+                        if (file.sys_updated_by)
+                            comments.push('Updated By  : '.concat(file.sys_updated_by.value || file.sys_updated_by));
+
+                        if (file.____.hostName)
+                            comments.push('URL         : - '.concat('/').concat(className).concat('.do?sys_id=').concat(sysId));
+
+                        if (extension == '.js') {
+                            value = '/* \n * '.concat(comments.join('\n * ')).concat('\n */\n').concat(value);
+                        } else if (/html$/.test(extension)) {
+                            value = '<!-- \n * '.concat(comments.join('\n * ')).concat('\n-->\n').concat(value);
+                        }
+
+                        fileObjectArray.push({
+                            sysId: sysId,
+                            fileUUID: currentFileUUID,
+                            body: value,
+                            hash: crypto.createHash('md5').update(value).digest('hex'),
+                            comments: comments,
+                            jsDoc: jsDoc,
+                            updatedBy: file.____.updatedBy
+                        });
                     }
 
-                    fileObjectArray.push({
-                        sysId: sysId,
-                        fileUUID: currentFileUUID,
-                        body: value,
-                        hash: crypto.createHash('md5').update(value).digest('hex'),
-                        comments: comments,
-                        jsDoc: jsDoc,
-                        updatedBy: file.____.updatedBy
-                    });
-                }
-                  
-            });
+                });
+            }
 
-        }
-        
-        if ((!entity && self.config.includeUnknownEntities) || entity.json) {
+
+        } else if (self.config.includeUnknownEntities) {
 
             // save unknown entity as json on disk
             var extension = '.json';
             var fileName = file.sys_id.value || file.sys_id;
 
-            fileUUID.push.apply(fileUUID, ['_', className, fileName.concat(extension)]);
-
+            fileUUID.push.apply(fileUUID, ['_', className, fileName.concat(extension)]);            
+            
             // sanitize all path segments
             fileUUID = fileUUID.map(function (val) {
                 return sanitize(val);

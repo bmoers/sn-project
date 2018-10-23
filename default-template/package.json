@@ -1,8 +1,7 @@
 {
 	"name": "@companyname/appname",
 	"version": "1.0.0",
-	"devDependencies": {
-	},
-	"scripts": {
-	}
+	"devDependencies": {},
+	"scripts": {},
+	"dependencies": {}
 }

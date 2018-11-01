@@ -12,7 +12,33 @@ var sanitize = require("sanitize-filename"),
 
 var Datastore = require('nedb'),
     defaultFields = ['sys_scope.name','sys_scope.scope', 'sys_scope', 'sys_class_name', 'sys_created_by', 'sys_created_on', 'sys_customer_update', 'sys_id', 'sys_mod_count', 'sys_name', 'sys_package', 'sys_policy', 'sys_replace_on_upgrade', 'sys_updated_by', 'sys_updated_on', 'sys_update_name'];
+
     
+const deleteRecord = function (record) {
+    var self = this;
+    return Promise.try(() => {
+        if (!record) {
+            console.warn(`no record specified`);
+            return;
+        }
+        // remove the branch name from the file record
+        if (record.branch[self.config.branch]) {
+            delete record.branch[self.config.branch];
+        }
+
+        if (Object.keys(record.branch).length === 0) {
+            // only remove from db if not in any other branch 
+            //console.log('deleteRecord', 'remove', { _id: record._id })
+            return self.db.removeAsync({ _id: record._id });
+        } else {
+            //console.log('deleteRecord', 'update', record)
+            // update the record information with the removed branch
+            return self.db.updateAsync({ _id: record._id }, record);
+        }
+    })
+};
+
+
 /**
  * Create a new collection
  * @param {String} options.dir the directory to create the repository
@@ -28,6 +54,7 @@ function SnProject(options, datastore) {
         dbName: 'snproject',
         entities: [],
         includeUnknownEntities: false,
+        allEntitiesAsJson: false,
         organization: 'organization',
         templateDir: path.join(__dirname, 'default-template'),
         templates: [{
@@ -56,6 +83,7 @@ function SnProject(options, datastore) {
             filename: self.config.dbFileName,
             autoload: true
         });
+        dataStore.ensureIndex({ fieldName: 'branch' });
         Promise.promisifyAll(dataStore);
         return dataStore;
     })();
@@ -72,7 +100,7 @@ function SnProject(options, datastore) {
     //console.log('SnProject ready');
 }
 
-
+/*
 SnProject.prototype.getDbFileName = function () {
     var self = this;
     return self.config.dbFileName;
@@ -82,6 +110,7 @@ SnProject.prototype.getDirectory = function () {
     var self = this;
     return self.config.dir;
 };
+*/
 
 SnProject.prototype.install = function () {
     var self = this;
@@ -213,7 +242,7 @@ SnProject.prototype.setup = function () {
             console.log("Copy Directory Fom '%s', to '%s'", copyDir.from, copyDir.to);
             return copy(copyDir.from, copyDir.to, {
                 overwrite: false
-            }).catch((e) => {
+            }).catch(() => {
                 console.log("Folder copy failed. Will slow down the build process but auto fixed with npm install.");
             });
         });
@@ -237,79 +266,118 @@ SnProject.prototype.setup = function () {
             packageDefinition.name = '@'.concat(self.config.organization).concat('/').concat(packageName.replace(/\s+/g, "-").replace(/(?:^[\.|_])|[^a-z0-9\-\._~]/g, '').replace(/\-+/g, '-'));
             return packageDefinition;
         }).then(function (packageDefinition) {
-            console.log("\tpackage.json created \n\t\t", path.join(self.config.dir, 'package.json'));
+            console.log("package.json created:", path.join(self.config.dir, 'package.json'));
             return pfile.writeFileAsync(path.join(self.config.dir, 'package.json'), JSON.stringify(packageDefinition, null, '\t'));
         });
     });
 };
 
 SnProject.prototype.getTestSuites = function (branch) {
-    var self = this,
-        query = (branch) ? { className: 'sys_atf_test_suite', branch: Array.isArray(branch) ? { $in: branch } : branch } : { className: 'sys_atf_test_suite' };
-    return self.db.findAsync(query);
+    const self = this;
+    const className = 'sys_atf_test_suite';
+    const query = {
+        className
+    };
+
+    if (branch) {
+        if (Array.isArray(branch)) {
+            branch.forEach((branchName) => {
+                query[`branch.${branchName}`] = { $exists: true }
+            });
+        } else {
+            query[`branch.${branch}`] = { $exists: true }
+        }
+    }
+    return self.db.findAsync(query).then((res) => {
+        if (!res)
+            return [];
+        return res.map((suite) => ({className, sysId: suite._id }));
+    });
 };
 
 SnProject.prototype.getTests = function (branch) {
-    var self = this,
-        query = (branch) ? { className: 'sys_atf_test', branch: Array.isArray(branch) ? { $in: branch } : branch } : { className: 'sys_atf_test' };
-    return self.db.findAsync(query);
+    const self = this;
+    const className = 'sys_atf_test';
+    const query = {
+        className
+    };
+    
+    if (branch) {
+        if (Array.isArray(branch)){
+            branch.forEach((branchName) => {
+                query[`branch.${branchName}`] = { $exists: true }
+            });
+        } else {
+            query[`branch.${branch}`] = { $exists: true }
+        }
+    }
+    return self.db.findAsync(query).then((res) => {
+        if (!res)
+            return [];
+        return res.map((test) => ({ className, sysId: test._id }));
+    });
 };
 
+/*
 SnProject.prototype.getFileBySysId = function (sysId) {
     var self = this;
-    return self.db.findOneAsync({ sysId: sysId });
+    return self.db.findOneAsync({ _id: sysId });
 };
 
 SnProject.prototype.deleteFileBySysId = function (sysId) {
     var self = this;
-    return self.db.removeAsync({ sysId: sysId });
+    return self.db.removeAsync({ _id: sysId });
+};
+*/
+
+SnProject.prototype.getRecordById = function (_id) {
+    var self = this;
+    return self.db.findOneAsync({ _id });
 };
 
-SnProject.prototype.deleteRecordById = function ({_id}) {
+SnProject.prototype.deleteRecordById = function (_id) {
     var self = this;
     return self.db.findOneAsync({_id}).then((record) => {
         if (!record) {
-            console.warn(`no record found with id ${sysId}`);
+            console.warn(`no record found with id ${_id}`);
             return;
         }
         return self.deleteRecord(record);
     });
 };
 
-SnProject.prototype.deleteRecord = function (record) {
+
+/**
+ * Deltete the branch information from the DB
+ * NOT THE FILES!
+ * @param {String} branch optional branch name [self.config.branch]
+ * @returns {Promise}
+ */
+SnProject.prototype.deleteBranch = function (branch) {
     var self = this;
-    return Promise.try(() => {
-        if (!record) {
-            console.warn(`no record specified`);
-            return;
-        }
-        // remove the branch name from the file record
-        var index = record.branch.indexOf(self.config.branch);
-        if (index !== -1)
-            record.branch.splice(index, 1);
-
-        if (record.branch.length === 0) {
-            // only remove from db if not in any other branch 
-            return self.db.removeAsync({ _id: record._id });
-        } else {
-            // update the record information with the removed branch
-            return self.db.updateAsync({ _id: record._id }, record);
-        }
-    })
+    const branchName = branch || self.config.branch;
+    if (!branchName)
+        return Promise.resolve();
+    
+    return self.db.findAsync({ [`branch.${branchName}`] : { $exists: true }}).then((filesInBranch) => {
+        console.log(`Deleting branch '${branchName}'. removing '${filesInBranch.length}' files from branch.`)
+        return Promise.each(filesInBranch, (record) => {
+            return deleteRecord.call(self, record);
+        });
+    });  
 };
-
 
 SnProject.prototype.writeFile = function (filePath, content, options) {  
     const self = this;
     const file = (Array.isArray(filePath)) ? path.join.apply(null, [self.config.dir].concat(filePath)) : path.join(self.config.dir, filePath);
-    console.log("write to ", file);
+    //console.log("write to ", file);
     return pfile.writeFileAsync(file, content, options).then(()=> file);
 };
 
 SnProject.prototype.readFile = function (...args) {
     const self = this;
     const file = path.join.apply(null, [self.config.dir].concat(args));
-    console.log("read from  ", file);
+    //console.log("read from  ", file);
     return pfile.readFileAsync(file, 'utf8');
 };
 
@@ -349,8 +417,21 @@ SnProject.prototype.hasEntity = function (className) {
     if (!className)
         return false;
     
-    return (self.config.includeUnknownEntities || self.config.entities[className]);
+    return Boolean(self.config.entities[className]);
 };
+
+SnProject.prototype.loadEntity = function (className) {
+    var self = this;
+    if (!className)
+        return false;
+    
+    return Boolean(self.config.allEntitiesAsJson || self.config.includeUnknownEntities || self.hasEntity(className));
+};
+
+SnProject.prototype.loadJson = function () {
+    const self = this;
+    return Boolean(self.config.allEntitiesAsJson || self.config.includeUnknownEntities);
+}
 
 /**
  * parse an entity int to a requestArguments object
@@ -428,69 +509,94 @@ SnProject.prototype.getEntityRequestParam = function (className) {
 
 };
 
-SnProject.prototype.remove = function (removedSysId) {
+/**
+ * Remove all records from DB and file system, which are IN the provided list.
+ * 
+ * @property {Array} removedSysId the records which have to be removed
+ * @returns {Array} the removed files
+ */
+SnProject.prototype.remove = function (removeSysIds, callback) {
     var self = this;
     // find all existing which are marked to be deleted
     //console.log("Removing", removedSysId);
     return self.db.findAsync({
-        sysId: { $in: removedSysId }
+        _id: { $in: removeSysIds },
+        [`branch.${self.config.branch}`]: { $exists: true }
     }).then(function (records) {
-        //console.log('DELETE records', records);
 
         var removedFilesFromDisk = [];
 
         return Promise.each(records, function (record) {
-            var fieldFileOsPath = path.join.apply(null, [self.config.dir].concat(record._id));
-            //console.log('DELETE %s', fieldFileOsPath);
 
-            return pfile.deleteFileAsync(fieldFileOsPath).then(function (deleted) {
-                if (deleted) {
-                    console.log('file successfully deleted %s', fieldFileOsPath);
-                    return self.deleteRecord(record).then(function () {
-                        removedFilesFromDisk.push(fieldFileOsPath);
-                    });
-                }
-                return null;
+            // delete all fields of this sys_id in this branch
+            return Promise.each(record.branch[self.config.branch].fields || [], (field) => {
+                var fieldFileOsPath = path.join.apply(null, [self.config.dir].concat(field.filePath));
+                return Promise.try(function () {
+                    if (callback) {
+                        return callback(fieldFileOsPath);
+                    } else {
+                        return pfile.deleteFileAsync(fieldFileOsPath);
+                    }
+                }).then(function (deleted) {
+                    if (deleted) {
+                        console.log('file successfully deleted %s', fieldFileOsPath);
+                        return deleteRecord.call(self, record).then(function () {
+                            removedFilesFromDisk.push(fieldFileOsPath);
+                        });
+                    } else {
+                        console.warn(`remove: file delete failed, file not found : ${fieldFileOsPath}`)
+                    }
+                }).then(function () {
+                    return pfile.deleteEmptyDirUpwards(fieldFileOsPath);
+                });
             }).then(function () {
-                return pfile.deleteEmptyDirAsync(fieldFileOsPath);
+                return removedFilesFromDisk;
             });
-        }).then(function () {
-            return removedFilesFromDisk;
         });
     });
 };
 
-SnProject.prototype.removeMissing = function (allSysIds, callback) {
+/**
+ * Remove all records from DB and file system, which are NOT in the provided list.
+ * 
+ * @property {Array} allSysIds the records which have to stay
+ * @property {function} callback optional function to delete the file (e.g. git.delete())
+ * @returns {Array} the removed files
+ */
+SnProject.prototype.removeMissing = function (remainSysIds, callback) {
     var self = this;
     return self.db.findAsync({
-        sysId: { $nin: allSysIds }
+        _id: { $nin: remainSysIds },
+        [`branch.${self.config.branch}`]: { $exists: true }
     }).then(function (records) {
 
         var removedFilesFromDisk = [];
 
         //console.log("Files in DB but not in the response: ", records);
         return Promise.each(records, function (record) {
-            var fieldFileOsPath = path.join.apply(null, [self.config.dir].concat(record._id));
-            //console.log('DELETE %s', fieldFileOsPath); 
-            /*
-                https://stackoverflow.com/questions/37521893/determine-if-a-path-is-subdirectory-of-another-in-node-js
-            */
-            return Promise.try(function () {
-                if (callback) {
-                    return callback(fieldFileOsPath);
-                } else {
-                    return pfile.deleteFileAsync(fieldFileOsPath);
-                }    
-            }).then(function (deleted) {
-                if (deleted) {
-                    return self.deleteRecord(record).then(function () {
-                        removedFilesFromDisk.push(fieldFileOsPath);
-                    });
-                }
-                return null;
-            }).then(function () {
-                return pfile.deleteEmptyDirAsync(fieldFileOsPath);
+            
+            // delete all fields of this sys_id in this branch
+            return Promise.each(record.branch[self.config.branch].fields || [], (field) => {
+                var fieldFileOsPath = path.join.apply(null, [self.config.dir].concat(field.filePath));
+                return Promise.try(function () {
+                    if (callback) {
+                        return callback(fieldFileOsPath);
+                    } else {
+                        return pfile.deleteFileAsync(fieldFileOsPath);
+                    }
+                }).then(function (deleted) {
+                    if (deleted) {
+                        return deleteRecord.call(self, record).then(function () {
+                            removedFilesFromDisk.push(fieldFileOsPath);
+                        });
+                    } else {
+                        console.warn(`removeMissing: file delete failed, file not found : ${fieldFileOsPath}`)
+                    }
+                }).then(function () {
+                    return pfile.deleteEmptyDirUpwards(fieldFileOsPath);
+                }); 
             });
+            
         }).then(function () {
             return removedFilesFromDisk;
         });
@@ -498,260 +604,387 @@ SnProject.prototype.removeMissing = function (allSysIds, callback) {
     });
 };
 
-SnProject.prototype.appendMeta = function (file, { hostName, className, appName, scopeName, updatedBy }) {
-    file.____ = { hostName, className, appName, scopeName, updatedBy };
+SnProject.prototype.appendMeta = function (file, { hostName, className, appName, scopeName, updatedBy, updatedOn }) {
+    file.____ = { hostName, className, appName, scopeName, updatedBy, updatedOn };
     return file;
 };
 
 
 SnProject.prototype.save = function (file) {
-    var self = this;
-    var promiseFor = Promise.method(function (condition, action, value) {
+    const self = this;
+    const promiseFor = Promise.method(function (condition, action, value) {
         if (!condition(value))
             return value;
         return action(value).then(promiseFor.bind(null, condition, action));
     });
 
+    const appName = file.____.appName;
+    const scopeName = file.____.scopeName;
+    const className = file.____.className;
+    const sysId = file.sys_id.value || file.sys_id;
 
-    //console.log("save file", file.sys_id);
+    const updatedByField = file.sys_updated_by || file.sys_created_by || 'system';
+    const updatedBy = file.____.updatedBy || updatedByField.display_value || updatedByField.value || updatedByField;
 
-    var applicationName = file.____.appName,
-        scopeName = file.____.scopeName,
-        className = file.____.className
-
-    var fileUUID = ['sn', applicationName];
-    var filesOnDisk = [];
+    let updatedOn = file.____.updatedOn || file.sys_updated_on.value || file.sys_updated_on || file.sys_created_on.value || file.sys_created_on || -1;
+    if (updatedOn) {
+        file.____.updatedOn = updatedOn;
+        updatedOn = new Date(updatedOn).getTime();
+    }
+    
+    // json files might also want to have an url...
+    file.____.url = `/${className}.do?sys_id=${sysId}`;
+    
+    const fileUUID = ['sn', appName];
+    const filesOnDisk = [];
 
     return Promise.try(function () {
 
-        /* the name of the object must be part of the folder
-            eg. IBM Watson/Global/UI Page/<name>/
-                - client_script.js
-                - html.xhtml
-        
-            if there is a subDirValue the folder structure shall be
-            IBM Watson/Global/Business Rule/cmdb_ci/active_true/after/<name>
-            <virtualApp>/<AppName>/<entitiyName> [subDirValue] 
+        const fileObjectArray = [];
 
-        */
-        
-        var fileObjectArray = [],
-            jsDoc;
-
-        var entity = self.getEntity(className);
-        if (entity) {
-            var entityFullName = entity.name;
-            var sysId = file.sys_id.value || file.sys_id;
-
-            fileUUID.push.apply(fileUUID, [entityFullName]);
-
-            jsDoc = {
-                file: path.join.apply(null, [self.config.dir].concat(fileUUID, className.concat('.jsdoc'))),
-                body: `/**\n * ${applicationName} ${entityFullName}\n * @module ${className}\n * @memberof ${scopeName}\n */\n`
-            };
-
-            var keyValue = _substituteField.call(self, entity.key, file) || '{undefined name}';
-            var subFolder = (entity.subDirPattern) ? _substituteField.call(self, entity.subDirPattern, file).replace(/^\/|\/$/g, '') : null;
-            if (subFolder) {
-                // append the subFolder structure to the path
-                fileUUID.push.apply(fileUUID, subFolder.split(/\/|\\/));
-            }
-
-            if (entity.json) {
-                // know entity in JSON format
-
-                let extension = '.json';
-                let fileName = file.sys_id.value || file.sys_id;
-
-                fileObjectArray.push({
-                    sysId: file.sys_id.value || file.sys_id,
-                    fileUUID: fileUUID.concat(fileName.concat(extension)),
-                    body: JSON.stringify(file, null, 2),
-                    hash: crypto.createHash('md5').update((file.sys_updated_on.value || file.sys_updated_on || file.sys_created_on.value || file.sys_created_on)).digest('hex'),
-                    comments: null,
-                    jsDoc: null,
-                    updatedBy: file.____.updatedBy
-                });
-
-            } else {
-                // know entity in text format
-                var fields = entity.fields || {},
-                    fieldKeys = Object.keys(fields);
-
-                if (fieldKeys.length > 1) {
-                    // value part of the path
-                    fileUUID.push.apply(fileUUID, [keyValue]);
-                }
-
-                fieldKeys.forEach(function (fieldName) {
-
-                    var extension = fields[fieldName];
-                    var value = (typeof file[fieldName] == 'object' && file[fieldName] !== null) ? file[fieldName].value : file[fieldName];
-
-                    // only create a file if the field has value
-                    if (value && value.length) {
-
-                        var currentFileUUID = fileUUID.concat([((fieldKeys.length > 1) ? fieldName : keyValue).concat(extension)]); // value part of the file
-                        // sanitize all path segments
-                        currentFileUUID = currentFileUUID.map(function (val) {
-                            return sanitize(val);
-                        });
-
-                        var comments = [];
-                        comments.push('Application : '.concat(applicationName));
-                        comments.push('ClassName   : '.concat(className));
-                        if (file.sys_created_on)
-                            comments.push('Created On  : '.concat(file.sys_created_on.value || file.sys_created_on));
-                        if (file.sys_created_by)
-                            comments.push('Created By  : '.concat(file.sys_created_by.value || file.sys_created_by));
-                        if (file.sys_updated_on)
-                            comments.push('Updated On  : '.concat(file.sys_updated_on.value || file.sys_updated_on));
-                        if (file.sys_updated_by)
-                            comments.push('Updated By  : '.concat(file.sys_updated_by.value || file.sys_updated_by));
-
-                        if (file.____.hostName)
-                            comments.push('URL         : - '.concat('/').concat(className).concat('.do?sys_id=').concat(sysId));
-
-                        if (extension == '.js') {
-                            value = '/* \n * '.concat(comments.join('\n * ')).concat('\n */\n').concat(value);
-                        } else if (/html$/.test(extension)) {
-                            value = '<!-- \n * '.concat(comments.join('\n * ')).concat('\n-->\n').concat(value);
-                        }
-
-                        fileObjectArray.push({
-                            sysId: sysId,
-                            fileUUID: currentFileUUID,
-                            body: value,
-                            hash: crypto.createHash('md5').update(value).digest('hex'),
-                            comments: comments,
-                            jsDoc: jsDoc,
-                            updatedBy: file.____.updatedBy
-                        });
-                    }
-
-                });
-            }
-
-
-        } else if (self.config.includeUnknownEntities) {
-
-            // save unknown entity as json on disk
-            var extension = '.json';
-            var fileName = file.sys_id.value || file.sys_id;
-
-            fileUUID.push.apply(fileUUID, ['_', className, fileName.concat(extension)]);            
-            
-            // sanitize all path segments
-            fileUUID = fileUUID.map(function (val) {
-                return sanitize(val);
-            });
-            try {
-                fileObjectArray.push({
-                    sysId: file.sys_id.value || file.sys_id,
-                    fileUUID: fileUUID,
-                    body: JSON.stringify(file, null, 2),
-                    hash: crypto.createHash('md5').update((file.sys_updated_on.value || file.sys_updated_on || file.sys_created_on.value || file.sys_created_on)).digest('hex'),
-                    comments: null,
-                    jsDoc: null,
-                    updatedBy: file.____.updatedBy
-                });
-            } catch (e) {
-                console.log(file);
-                throw e;
-            }    
-        }
-
-        return fileObjectArray;
-
-    }).then(function (fileObjectArray) {
-       
-        /*
-        console.log('\t',fileObjectArray.map(function (a) {
-            return a.sysId;
-        }));
-        */
-        return Promise.each(fileObjectArray, function (fileObject) {
-            
-            var cacheKey = path.join.apply(null, fileObject.fileUUID),
-                last = fileObject.fileUUID.length - 1,    
-                fileName = fileObject.fileUUID[last],
-                counter = 0;
-            
-            return new Promise.try(function () {
-                /*
-                    create jsDoc file
-                */
-                var jsDoc = fileObject.jsDoc;
-                if (!jsDoc || !jsDoc.file)
-                    return;
-
-                return pfile.exists(jsDoc.file).then(function (exists) {
-                    if (exists)
-                        return;
-
-                    return pfile.writeFileAsync(jsDoc.file, jsDoc.body);
-                });
-
-            }).then(function () {
-                /* 
-                    ensure the file-name is unique
-                */
+        const add = (fileObject) => {
+            return new Promise.try(() => { // ensure the file-name is unique
+                let filePath = path.join.apply(null, fileObject.fileUUID);
+                let counter = 0;
+                const last = fileObject.fileUUID.length - 1;
+                const fileName = fileObject.fileUUID[last];
                 return promiseFor(function (next) {
                     return (next);
-                }, function () {
+                }, () => {
                     return self.db.findOneAsync({
-                        _id: cacheKey,
-                        sysId: { $ne: fileObject.sysId }
+                        [`branch.${self.config.branch}.fields.filePath`]: filePath,
+                        _id: { $ne: sysId }
                     }).then(function (doc) {
                         if (doc) {
                             counter++;
                             //console.warn("there is already an object with the same name but different sys_id! Renaming current file");
                             fileObject.fileUUID[last] = fileName.replace(/(\.[^\.]+)$/, "_" + counter + "$1");
-                            cacheKey = path.join.apply(null, fileObject.fileUUID);
+                            filePath = path.join.apply(null, fileObject.fileUUID);
                             //console.warn("\tto:", cacheKey);
                             return (counter < 500);
                         }
                         return false;
                     });
                 }, true);
-                
-            }).then(function () {
-                /* 
-                    find the current cached record
-                */
-                return self.db.findOneAsync({
-                    _id: cacheKey
-                });
 
-            }).then(function (entityCache) {
-                /*
-                    write the file on disk
-                */
-                var fieldFileOsPath = path.join.apply(null, [self.config.dir].concat(fileObject.fileUUID));
+            }).then(() => { // add the file with unique filename
+                fileObjectArray.push(fileObject)
+            });
+        }
+
+        const convert = (text) => {
+            if (text === undefined || text === null)
+                return text;
+
+            if (typeof text == "object") {
+                return Object.keys(text).reduce((out, key) => {
+                    out[key] = convert(text[key]);
+                    return out;
+                }, {});
+            }
+            if (Array.isArray(text)) {
+                return text.map((key) => convert(key));
+            }
+            const textL = text.toString().toLowerCase();
+            if (textL == 'null')
+                return null;
+            if (textL === "true" || textL === true)
+                return true;
+            if (textL === "false" || textL === false)
+                return false;
+            if (text.length && !isNaN(text))
+                return Number(text);
+
+            return text;
+        };
+
+        /**
+         * Flatten the JSON. Remove all display values.
+         * This is to ensure the local json file does always look the same, 
+         * regardless if its based on REST or Update-Set XML
+         * 
+         * @param {Object} file the REST response with display_value
+         * @returns {Object} a copy of the file object with xml like structure
+         */
+        const removeDisplayValue = (file) => {
+            return Object.keys(file).sort().reduce((out, key) => {
+                if (key.indexOf(".") !== -1 || 'sys_tags' == key) {
+                    return out;
+                }
+                const field = file[key];
+                out[key] = convert(field.value !== undefined ? field.value : field);
+                return out;
+            }, {});
+        };
+
+        const entity = self.getEntity(className);
+        let entityFileUUID;
+        let jsDoc;
+
+        return Promise.try(function () {
+            if (entity) {
+                var entityFullName = entity.name;
+                
+                entityFileUUID = fileUUID.concat(entityFullName);
+                const jsDocFileUUID = path.join.apply(null, [self.config.dir].concat(entityFileUUID, className.concat('.jsdoc')));
+
+                var keyValue = _substituteField.call(self, entity.key, file) || '{undefined name}';
+                var subFolder = (entity.subDirPattern) ? _substituteField.call(self, entity.subDirPattern, file).replace(/^\/|\/$/g, '') : null;
+                if (subFolder) {
+                    // append the subFolder structure to the path
+                    entityFileUUID = entityFileUUID.concat(subFolder.split(/\/|\\/))
+                }
+
+                if (entity.json) {
+                    // know entity in JSON format
+
+                    const extension = '.json';
+                    const fileName = sysId;
+                    const entityJsonFileUUID = entityFileUUID.concat(fileName.concat(extension)).map((val) => sanitize(val));
+                    
+                    return add({
+                        id: `JSON`,
+                        fileName,
+                        fileUUID: entityJsonFileUUID,
+                        body: JSON.stringify( removeDisplayValue(file) , null, 2),
+                        hash: crypto.createHash('md5').update(updatedOn.toString()).digest('hex'),
+                        comments: null,
+                        updatedBy,
+                        updatedOn
+                    });
+                    
+                } else {
+
+                    // know entity in text format
+                    var fields = entity.fields || {},
+                        fieldKeys = Object.keys(fields);
+
+                    if (fieldKeys.length > 1) {
+                        // value part of the path
+                        entityFileUUID = entityFileUUID.concat(keyValue);
+                    }
+
+                    entityFileUUID = entityFileUUID.map((val) => sanitize(val));
+
+                    return Promise.each(fieldKeys, function (fieldName) {
+
+                        var extension = fields[fieldName];
+                        var value = (typeof file[fieldName] == 'object' && file[fieldName] !== null) ? file[fieldName].value : file[fieldName];
+
+                        // only create a file if the field has value
+                        if (value && value.length) {
+
+                            if (!jsDoc) {
+                                jsDoc = {
+                                    file: jsDocFileUUID,
+                                    body: `/**\n * ${appName} ${entityFullName}\n * @module ${className}\n * @memberof ${scopeName}\n */\n`
+                                };
+                            }
+                            const fileName = (fieldKeys.length > 1) ? fieldName : keyValue;
+                            var currentFileUUID = entityFileUUID.concat([(fileName).concat(extension)]).map((val) => sanitize(val));
+
+                            var comments = [];
+                            comments.push('Application : '.concat(appName));
+                            comments.push('ClassName   : '.concat(className));
+                            if (file.sys_created_on)
+                                comments.push('Created On  : '.concat(file.sys_created_on.value || file.sys_created_on));
+                            if (file.sys_created_by)
+                                comments.push('Created By  : '.concat(file.sys_created_by.value || file.sys_created_by));
+                            if (file.sys_updated_on)
+                                comments.push('Updated On  : '.concat(file.sys_updated_on.value || file.sys_updated_on));
+                            if (file.sys_updated_by)
+                                comments.push('Updated By  : '.concat(file.sys_updated_by.value || file.sys_updated_by));
+
+                            if (file.____.hostName)
+                                comments.push('URL         : '.concat('/').concat(className).concat('.do?sys_id=').concat(sysId));
+
+                            if (extension == '.js') {
+                                value = '/* \n * '.concat(comments.join('\n * ')).concat('\n */\n').concat(value);
+                            } else if ((/html$/).test(extension)) {
+                                value = '<!-- \n * '.concat(comments.join('\n * ')).concat('\n-->\n').concat(value);
+                            }
+
+                            return add({
+                                id: `FIELD:${fieldName}`,
+                                fileName,
+                                fileUUID: currentFileUUID,
+                                body: value,
+                                hash: crypto.createHash('md5').update(value.replace(/[\n\r]+/g, '\n')).digest('hex'),
+                                comments,
+                                updatedBy,
+                                updatedOn
+                            });
+                        }
+
+                    });
+                }
+            }
+        
+        }).then(() => {
+            if (self.config.allEntitiesAsJson || (!entity && self.config.includeUnknownEntities)) {
+
+                if (entity && entity.json) // dont save 2 versions of JSON
+                    return;
+                
+                // save unknown entity as json on disk
+                const extension = '.json';
+                const fileName = sysId;
+                const jsonFile = assign({}, file);
+
+
+                let jsonFileUUID = fileUUID.concat(['_', className, fileName.concat(extension)]);
+                if (entity) {
+                    /*
+                    jsonFileUUID = entityFileUUID.concat();
+                    jsonFileUUID[jsonFileUUID.length - 1] = fileName.concat(extension); 
+                    */
+                    
+                    // link the fields which are created as file.
+                    // this prevents from 'seeing' multiple changes in the branch
+                    Object.keys(entity.fields || {}).forEach((key) => {
+                        if (jsonFile[key]) {
+                            const fileObject = fileObjectArray.find((fileObject) => {
+                                return (fileObject.id == `FIELD:${key}`);
+                            })
+                            if (fileObject)
+                                jsonFile[key] = {
+                                    ____see: path.join.apply(null, fileObject.fileUUID)
+                                }
+                        }
+                    });
+                }
+
+                // sanitize all path segments
+                jsonFileUUID = jsonFileUUID.map((val) => sanitize(val));
+                return add({
+                    id: `JSON`,
+                    fileName,
+                    fileUUID: jsonFileUUID,
+                    body: JSON.stringify( removeDisplayValue(jsonFile) , null, 2),
+                    hash: crypto.createHash('md5').update(updatedOn.toString()).digest('hex'),
+                    comments: null,
+                    updatedBy,
+                    updatedOn
+                });
+            }
+        }).then(() => {
+            return { fileObjectArray, jsDoc };
+        });
+    }).then(({ fileObjectArray, jsDoc }) => { // create jsDoc file
+        return new Promise.try(function () {
+            if (!jsDoc || !jsDoc.file)
+                return;
+            return pfile.exists(jsDoc.file).then(function (exists) {
+                if (exists)
+                    return;
+                return pfile.writeFileAsync(jsDoc.file, jsDoc.body).then(() => {
+                    filesOnDisk.push({
+                        _id: jsDoc.file,
+                        sysId: `${sysId}.JSCDOC`,
+                        path: jsDoc.file,
+                        updatedBy: 'system',
+                        modified: true
+                    });
+                });
+            });
+        }).then(() => fileObjectArray);
+        
+    }).then((fileObjectArray) => {
+        return self.db.findOneAsync({
+            _id: sysId
+        }).then((entityCache) => {
+            if (!entityCache){
+                entityCache = {
+                    _id: sysId,
+                    className,
+                    appName,
+                    branch: {
+                        [self.config.branch]: {
+                            updatedBy,
+                            updatedOn,
+                            fields: []
+                        }
+                    }
+                };
+            }
+            if (!entityCache.branch[self.config.branch])
+                entityCache.branch[self.config.branch] = {
+                    updatedBy,
+                    updatedOn,
+                    fields: []
+                };
+            return { entityCache, fileObjectArray };          
+        });
+
+    }).then(({ entityCache, fileObjectArray}) => {
+        
+        const branchObject = entityCache.branch[self.config.branch];
+        
+        return Promise.each(fileObjectArray, function (fileObject) {
+
+            const filePath = path.join.apply(null, fileObject.fileUUID);
+            const cachedField = branchObject.fields.find((field) => {
+                return (field.id == fileObject.id)
+            });
+            
+            return new Promise.try(() => { // ensure the file-name is unique
+                
+                if (!cachedField) // file not in db yet
+                    return;
+                
+                if (cachedField.filePath != filePath) { // the filePath has changed
+                    const from = path.join.apply(null, [self.config.dir].concat(cachedField.filePath));
+                    const to = path.join.apply(null, [self.config.dir].concat(filePath));
+                    
+                    console.log(`\t\tRename file \n\t\t\tfrom '${from}' \n\t\t\tto   '${to}'`);
+                    return pfile.move(from, to).then(() => {
+                        cachedField.name = fileObject.fileName;
+                        cachedField.filePath = filePath;
+                    }).then(() => {
+                        //console.log("Delete empty directory ", from);
+                        return pfile.deleteEmptyDirUpwards(from);
+                    }).then(() => {
+                        return self.db.updateAsync({ _id: entityCache._id }, { $set: { [`branch.${self.config.branch}.fields`]: branchObject.fields } }, { upsert: true });
+                    });
+                }
+            
+            }).then(() => { // write the file on disk
+                
+                //var fieldFileOsPath = path.join.apply(null, [self.config.dir].concat(fileObject.fileUUID));
+                var fieldFileOsPath = path.join(self.config.dir, filePath);
                 return pfile.exists(fieldFileOsPath).then(function (exists) {
 
-                    if (exists && entityCache && entityCache.hash == fileObject.hash) {
+                    if (exists && cachedField && cachedField.hash == fileObject.hash) {
+                        
                         // the file has not changed, return here
-                        console.log("\t\tfile has not changed, skip '%s'", fieldFileOsPath);
-                        return false;
+                        console.log("\t\tfile has not changed, skip '%s'", filePath);
+                        // update the branch information 
+                        cachedField.updatedOn = fileObject.updatedOn;
+                        return self.db.updateAsync({ _id: entityCache._id }, { $set: { [`branch.${self.config.branch}.fields`]: branchObject.fields } }, { upsert: true }).then(() => {
+                            return false;
+                        });   
                     }
+
+                    const fieldObject = cachedField || {};
+                    if (!cachedField) {
+                        branchObject.fields.push(fieldObject);
+                    }
+                    fieldObject.id = fileObject.id;
+                    fieldObject.hash = fileObject.hash;
+                    fieldObject.filePath = filePath
+                    fieldObject.name = fileObject.fileName;
 
                     return pfile.writeFileAsync(fieldFileOsPath, fileObject.body).then(function () {
                         console.log("\t\tadd file '%s'", fieldFileOsPath);
-                        return self.db.updateAsync({ _id: cacheKey },
-                            {
-                                $set: { _id: cacheKey, counter: counter, hash: fileObject.hash, sysId: fileObject.sysId, className: className, appName: applicationName },
-                                $addToSet: { branch: self.config.branch }
-                            },
-                            { upsert: true });
+                        return self.db.updateAsync({ _id: entityCache._id }, entityCache, { upsert: true });
                     }).then(() => {
                         return true;
                     });
                     
                 }).then(function (modified) {
                     filesOnDisk.push({
-                        _id: cacheKey,
-                        sysId: fileObject.sysId,
+                        _id: fileObject.fileName,
+                        sysId: sysId,
                         path: fieldFileOsPath,
                         updatedBy: fileObject.updatedBy,
                         modified: modified
@@ -763,6 +996,7 @@ SnProject.prototype.save = function (file) {
         return filesOnDisk;
     });
 };
+
 
 /**
  * check if an entity has alias classNames
@@ -796,7 +1030,7 @@ var _copyAlias = function (entity) {
                 _copyAlias.call(self, aliasEntity);
             } else {
                 // create the alias entity
-                _setEntity.call(self, assign({}, entity, { className: aliasClassName, name: entity.name.concat(':').concat(aliasClassName), alias: null, copyOfClassName: entity.className }));
+                _setEntity.call(self, assign({}, entity, { className: aliasClassName, name: entity.name.concat('.').concat(aliasClassName), alias: null, copyOfClassName: entity.className }));
             }
         });
     }
@@ -892,7 +1126,7 @@ var _substituteField = function (fieldValue, substituteObject) {
         var payloadValue = substituteObject[fieldValue];
         if (payloadValue) {
             // take the value automatically form result object or string
-            return (typeof payloadValue == 'object') ? payloadValue.value : payloadValue; //((displayValue) ? payloadValue.display_value : payloadValue.value) : payloadValue; // ((displayValue) ? payloadValue.display_value : payloadValue.value) : payloadValue;
+            return (payloadValue.value !== undefined) ? payloadValue.value : payloadValue; //((displayValue) ? payloadValue.display_value : payloadValue.value) : payloadValue; // ((displayValue) ? payloadValue.display_value : payloadValue.value) : payloadValue;
         }
         return '{--none--}';
     }
@@ -910,7 +1144,7 @@ var _substituteField = function (fieldValue, substituteObject) {
             // split key for alternatives
 
             // first alternative to match exits
-            var replaced = key.split('|').some(function (alternative) {
+            var replaced = key.split('|').some((alternative) => {
 
                 var optional = false,
                     displayValue = false;
@@ -923,7 +1157,7 @@ var _substituteField = function (fieldValue, substituteObject) {
                     displayValue = true;
                     alternative = alternative.slice(0, -3);
                 }
-
+                
                 if (alternative.indexOf('\'') === 0) {
                     // string alternative
                     substituteString = substituteString.replace(wholeKey, alternative.replace(/\'/g, ''));
@@ -931,12 +1165,14 @@ var _substituteField = function (fieldValue, substituteObject) {
 
                 } else {
                     // variable alternative
-                    var payloadValue = substituteObject[alternative];
-                    if (payloadValue) {
-
+                    var payloadValue = substituteObject[alternative];                    
+                    if (payloadValue !== undefined) {
                         // take the value automatically form result object or string
                         var value = (typeof payloadValue == 'object') ? ((displayValue) ? payloadValue.display_value : payloadValue.value) : payloadValue;
-                        if (value && value.length > 0) {
+                        if (value !== undefined && value !== null) {
+                            if (typeof value == 'string' && value.length === 0) // no substitution with empty string
+                                return false;
+                            
                             substituteString = substituteString.replace(wholeKey, value);
                             return true;
                         }
@@ -960,7 +1196,4 @@ var _substituteField = function (fieldValue, substituteObject) {
 
 };
 
-var _copyFile = function (sourceFile, targetFile) {
-    return pfile.copyFileAsync(sourceFile, targetFile);
-};
 module.exports = SnProject;

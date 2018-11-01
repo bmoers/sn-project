@@ -31,7 +31,7 @@
         "fields": {
             "instructions": ".xhtml"
         },
-        "subDirPattern": "active_<active>/<table>"
+        "subDirPattern": null
     },
     "ci_identifier": {
         "name": "CI Identifier",
@@ -39,7 +39,7 @@
         "fields": {
             "script": ".js"
         },
-        "subDirPattern": "active_<active>/<applies_to>"
+        "subDirPattern": null
     },
     "clone_cleanup_script": {
         "name": "Clone Cleanup Script",
@@ -69,7 +69,7 @@
         "fields": {
             "script": ".js"
         },
-        "subDirPattern": "active_<active>"
+        "subDirPattern": null
     },
     "cmn_schedule_page": {
         "name": "Schedule Page",
@@ -97,8 +97,7 @@
         ],
         "fields": {
             "condition": ".js"
-        },
-        "subDirPattern": "active_<active>"
+        }
     },
     "content_block_detail": {
         "name": "Detailed Content",
@@ -136,8 +135,7 @@
         "key": "name",
         "fields": {
             "advanced_condition": ".js"
-        },
-        "subDirPattern": "active_<active>"
+        }
     },
     "content_type_detail": {
         "name": "Detail Pages",
@@ -161,7 +159,7 @@
         "fields": {
             "search_as_script": ".js"
         },
-        "subDirPattern": "active_<active>"
+        "subDirPattern": null
     },
     "discovery_port_probe": {
         "name": "Discovery Port Probe",
@@ -169,7 +167,7 @@
         "fields": {
             "script": ".js"
         },
-        "subDirPattern": "active_<active>/<scanner>"
+        "subDirPattern": null
     },
     "ecc_agent_capability_value_test": {
         "name": "MID Server Capability Value Test",
@@ -177,7 +175,7 @@
         "fields": {
             "script": ".js"
         },
-        "subDirPattern": "active_<active>"
+        "subDirPattern": null
     },
     "ecc_agent_script": {
         "name": "MID Server Script",
@@ -185,7 +183,7 @@
         "fields": {
             "script": ".js"
         },
-        "subDirPattern": "active_<active>"
+        "subDirPattern": null
     },
     "ecc_agent_script_include": {
         "name": "MID Server Script Include",
@@ -193,7 +191,7 @@
         "fields": {
             "script": ".js"
         },
-        "subDirPattern": "active_<active>"
+        "subDirPattern": null
     },
     "expert_panel_template": {
         "name": "Record Generator",
@@ -201,11 +199,11 @@
         "fields": {
             "script": ".js"
         },
-        "subDirPattern": "<table!dv>/<expert!dv>"
+        "subDirPattern": null
     },
     "expert_panel_transition": {
         "name": "Wizard Panel Transition",
-        "key": "<from>-<to>-<order>",
+        "key": "order",
         "fields": {
             "transition_script": ".js"
         },
@@ -217,7 +215,7 @@
         "fields": {
             "script": ".js"
         },
-        "subDirPattern": "active_<active>/<expert>/<expert_panel>/<type>/<expert_panel_variable?>"
+        "subDirPattern": "<expert>/<expert_panel>/<type>/<expert_panel_variable?>"
     },
     "gsw_content_information": {
         "name": "Guided Setup Information",
@@ -225,11 +223,10 @@
         "fields": {
             "article": ".xhtml"
         },
-        "subDirPattern": "active_<active>/<parent|'root'>"
+        "subDirPattern": null
     },
     "kb_navons": {
-        "name": "Knowledge Nav-ons",
-        "subDirPattern": "active_<active>"
+        "name": "Knowledge Nav-ons"
     },
     "live_table_notification": {
         "name": "Live Table Notification",
@@ -238,7 +235,7 @@
             "before_script": ".js",
             "message": ".js"
         },
-        "subDirPattern": "active_<active>/<table>"
+        "subDirPattern": "<table!dv>"
     },
     "menu_section": {
         "name": "Menu Section",
@@ -247,7 +244,7 @@
             "footer": ".xhtml",
             "header": ".xhtml"
         },
-        "subDirPattern": "active_<active>/<content_block_menu!dv>"
+        "subDirPattern": null
     },
     "metric_definition": {
         "name": "Metric Definition",
@@ -255,7 +252,7 @@
         "fields": {
             "script": ".js"
         },
-        "subDirPattern": "active_<active>/<table>"
+        "subDirPattern": null
     },
     "pa_scripts": {
         "name": "Script",
@@ -263,7 +260,7 @@
         "fields": {
             "script": ".js"
         },
-        "subDirPattern": "<table>"
+        "subDirPattern": null
     },
     "packages_call_item": {
         "name": "",
@@ -278,15 +275,14 @@
         "fields": {
             "description": ".xhtml"
         },
-        "subDirPattern": "active_<active>"
+        "subDirPattern": null
     },
     "process_guide": {
         "name": "Process Guides",
         "key": "name",
         "fields": {
             "advanced_condition": ".js"
-        },
-        "subDirPattern": "active_<active>/<table>"
+        }
     },
     "process_step_approval": {
         "name": "Approval Steps",
@@ -313,7 +309,7 @@
             "script": ".js",
             "validator": ".js"
         },
-        "subDirPattern": "active_<active>"
+        "subDirPattern": null
     },
     "sc_cat_item_option": {
         "name": "Item Option",
@@ -329,7 +325,7 @@
         "fields": {
             "approver_script": ".js"
         },
-        "subDirPattern": "active_<active>"
+        "subDirPattern": "<sc_ic_aprvl_type_defn_staging!dv>"
     },
     "sc_ic_aprvl_type_defn_staging": {
         "name": "Approval Type",
@@ -337,7 +333,7 @@
         "fields": {
             "approver_script": ".js"
         },
-        "subDirPattern": "active_<active>"
+        "subDirPattern": "<sc_ic_aprvl_type_defn!dv>"
     },
     "sc_ic_item_staging": {
         "name": "Item",
@@ -345,7 +341,7 @@
         "fields": {
             "description": ".xhtml"
         },
-        "subDirPattern": "active_<active>"
+        "subDirPattern": null
     },
     "sc_ic_task_assign_defn": {
         "name": "Task Assignment Definition",
@@ -353,7 +349,7 @@
         "fields": {
             "assignment_script": ".js"
         },
-        "subDirPattern": "active_<active>"
+        "subDirPattern": "<sc_ic_task_assign_defn_staging!dv>"
     },
     "sc_ic_task_assign_defn_staging": {
         "name": "Task Assignment",
@@ -361,7 +357,7 @@
         "fields": {
             "assignment_script": ".js"
         },
-        "subDirPattern": "active_<active>"
+        "subDirPattern": "<sc_ic_task_assign_defn!dv>"
     },
     "scheduled_data_export": {
         "name": "Scheduled Data Export",
@@ -370,7 +366,7 @@
             "post_script": ".js",
             "pre_script": ".js"
         },
-        "subDirPattern": "active_<active>"
+        "subDirPattern": null
     },
     "service_scope": {
         "name": "Service Scope",
@@ -387,7 +383,7 @@
             "auto_script_script": ".js",
             "ui_action_script": ".js"
         },
-        "subDirPattern": "active_<active>/<table>"
+        "subDirPattern": null
     },
     "sf_sm_task": {
         "name": "Service Task/Order Flow",
@@ -399,7 +395,7 @@
             "auto_script_script": ".js",
             "ui_action_script": ".js"
         },
-        "subDirPattern": "active_<active>/<table>"
+        "subDirPattern": "<sys_class_name>/<table!dv>"
     },
     "sf_state_flow": {
         "name": "State Flow",
@@ -423,7 +419,7 @@
             "manual_script": ".js",
             "manual_string": ".js"
         },
-        "subDirPattern": "active_<active>/<sys_class_name>"
+        "subDirPattern": "<sys_class_name>/<table!dv>"
     },
     "sp_angular_provider": {
         "name": "Widget Angular Provider",
@@ -431,7 +427,7 @@
         "fields": {
             "script": ".js"
         },
-        "subDirPattern": "<type!dv>"
+        "subDirPattern": null
     },
     "sp_ng_template": {
         "name": "Angular ng-template",
@@ -439,7 +435,7 @@
         "fields": {
             "template": ".xhtml"
         },
-        "subDirPattern": "<sp_widget!dv>"
+        "subDirPattern": null
     },
     "sp_portal": {
         "name": "Service Portal",
@@ -455,11 +451,11 @@
         "fields": {
             "record_script": ".js"
         },
-        "subDirPattern": "active_<active>"
+        "subDirPattern": null
     },
     "sp_widget": {
         "name": "Widget",
-        "key": "<name>-<id>",
+        "key": "name",
         "fields": {
             "client_script": ".js",
             "link": ".js",
@@ -489,12 +485,11 @@
             "message_send_listener": ".js",
             "user_subscribe_listener": ".js",
             "user_unsubscribe_listener": ".js"
-        },
-        "subDirPattern": "active_<active>"
+        }
     },
     "sys_dictionary": {
         "name": "Dictionary Entry",
-        "key": "<element|'collection'>",
+        "key": "<element|name>",
         "fields": {
             "dynamic_creation_script": ".js",
             "calculation": ".js"
@@ -502,7 +497,7 @@
         "fieldsDisabled": {
             "default_value": ".js"
         },
-        "subDirPattern": "<name>/active_<active>"
+        "subDirPattern": "<name>"
     },
     "sys_home": {
         "name": "Welcome Page Section",
@@ -510,7 +505,7 @@
         "fields": {
             "text": ".xhtml"
         },
-        "subDirPattern": "active_<active>"
+        "subDirPattern": null
     },
     "sys_impex_entry": {
         "name": "Field Map",
@@ -526,7 +521,7 @@
         "fields": {
             "script": ".js"
         },
-        "subDirPattern": "active_<active>"
+        "subDirPattern": null
     },
     "sys_installation_exit": {
         "name": "Installation Exit",
@@ -534,7 +529,7 @@
         "fields": {
             "script": ".js"
         },
-        "subDirPattern": "active_<active>"
+        "subDirPattern": null
     },
     "sys_listener_detail": {
         "name": "Sys listener detail",
@@ -551,7 +546,7 @@
             "text_script": ".js",
             "url_script": ".js"
         },
-        "subDirPattern": "active_<active>"
+        "subDirPattern": null
     },
     "sys_navigator": {
         "name": "Navigation Handler",
@@ -567,15 +562,14 @@
         "fields": {
             "description": ".xhtml"
         },
-        "subDirPattern": "active_<active>"
+        "subDirPattern": null
     },
     "sys_processor": {
         "name": "Processor",
         "key": "name",
         "fields": {
             "script": ".js"
-        },
-        "subDirPattern": "active_<active>"
+        }
     },
     "sys_properties_category": {
         "name": "System Property Category",
@@ -618,7 +612,7 @@
         "fields": {
             "render_script": ".js"
         },
-        "subDirPattern": "active_<active>"
+        "subDirPattern": null
     },
     "sys_script": {
         "name": "Business Rule",
@@ -627,7 +621,7 @@
             "script": ".js",
             "message": ".js"
         },
-        "subDirPattern": "<collection>/active_<active>/<when!dv>"
+        "subDirPattern": "<collection>/<when!dv>"
     },
     "sys_script_ajax": {
         "name": "AJAX Script",
@@ -635,7 +629,7 @@
         "fields": {
             "script": ".js"
         },
-        "subDirPattern": "active_<active>"
+        "subDirPattern": null
     },
     "sys_script_client": {
         "name": "Client Script",
@@ -643,7 +637,7 @@
         "fields": {
             "script": ".js"
         },
-        "subDirPattern": "<table>/active_<active>"
+        "subDirPattern": "<table>/<type>/<field>"
     },
     "sys_script_email": {
         "name": "Email Script",
@@ -659,7 +653,7 @@
         "fields": {
             "script": ".js"
         },
-        "subDirPattern": "active_<active>"
+        "subDirPattern": null
     },
     "sys_script_include": {
         "name": "Script Include",
@@ -667,7 +661,7 @@
         "fields": {
             "script": ".js"
         },
-        "subDirPattern": "active_<active>"
+        "subDirPattern": null
     },
     "sys_script_validator": {
         "name": "Validation Script",
@@ -675,15 +669,15 @@
         "fields": {
             "validator": ".js"
         },
-        "subDirPattern": "active_<active>"
+        "subDirPattern": null
     },
     "sys_security_acl": {
         "name": "Access Control",
-        "key": "<operation>",
+        "key": "operation",
         "fields": {
             "script": ".js"
         },
-        "subDirPattern": "active_<active>/<type!dv>/<name>"
+        "subDirPattern": "<name>"
     },
     "sys_service_api": {
         "name": "Service API",
@@ -691,7 +685,7 @@
         "fields": {
             "script": ".js"
         },
-        "subDirPattern": "active_<active>"
+        "subDirPattern": null
     },
     "sys_soap_message": {
         "name": "SOAP Message",
@@ -714,8 +708,7 @@
         "key": "name",
         "fields": {
             "script": ".js"
-        },
-        "subDirPattern": "active_<active>"
+        }
     },
     "sys_transform_script": {
         "name": "Transform Script",
@@ -723,7 +716,7 @@
         "fields": {
             "script": ".js"
         },
-        "subDirPattern": "active_<active>"
+        "subDirPattern": "<map!dv>/<order>"
     },
     "sys_trigger": {
         "name": "Schedule Item"
@@ -734,7 +727,7 @@
         "fields": {
             "script": ".js"
         },
-        "subDirPattern": "<table>/active_<active>"
+        "subDirPattern": "<table>"
     },
     "sys_ui_context_menu": {
         "name": "Context Menu",
@@ -743,12 +736,11 @@
             "action_script": ".js",
             "dynamic_actions_script": ".js",
             "on_show_script": ".js"
-        },
-        "subDirPattern": "<table>/active_<active>"
+        }
     },
     "sys_ui_list_control": {
         "name": "List Control",
-        "key": "<name>-<related_list|'default'>",
+        "key": "<related_list|name>",
         "fields": {
             "columns_condition": ".js",
             "edit_condition": ".js",
@@ -760,7 +752,7 @@
     },
     "sys_ui_list_control_embedded": {
         "name": "Embedded List Control",
-        "key": "<name>-<related_list|'default'>",
+        "key": "<related_list|name>",
         "fields": {
             "columns_condition": ".js",
             "empty_condition": ".js",
@@ -774,7 +766,7 @@
         "fields": {
             "script": ".js"
         },
-        "subDirPattern": "active_<active>"
+        "subDirPattern": null
     },
     "sys_ui_list_script_server": {
         "name": "List Server Script",
@@ -782,7 +774,7 @@
         "fields": {
             "script": ".js"
         },
-        "subDirPattern": "active_<active>"
+        "subDirPattern": null
     },
     "sys_ui_macro": {
         "name": "Macro",
@@ -790,7 +782,7 @@
         "fields": {
             "xml": ".xhtml"
         },
-        "subDirPattern": "active_<active>"
+        "subDirPattern": null
     },
     "sys_ui_ng_action": {
         "name": "UI Action - Mobile",
@@ -798,7 +790,7 @@
         "fields": {
             "script": ".js"
         },
-        "subDirPattern": "active_<active>"
+        "subDirPattern": null
     },
     "sys_ui_page": {
         "name": "UI Page",
@@ -808,7 +800,7 @@
             "client_script": ".js",
             "processing_script": ".js"
         },
-        "subDirPattern": "<category|'uncategorized'>"
+        "subDirPattern": "<category|'--none--'>"
     },
     "sys_ui_policy": {
         "name": "UI Policy",
@@ -817,15 +809,14 @@
             "script_true": ".js",
             "script_false": ".js"
         },
-        "subDirPattern": "<table>/active_<active>"
+        "subDirPattern": "<table>"
     },
     "sys_ui_script": {
         "name": "UI Script",
         "key": "name",
         "fields": {
             "script": ".js"
-        },
-        "subDirPattern": "active_<active>/global_<global>"
+        }
     },
     "sys_ui_style": {
         "name": "Style",
@@ -833,7 +824,7 @@
         "fields": {
             "value": ".js"
         },
-        "subDirPattern": "<name>/<element>"
+        "subDirPattern": "<name>"
     },
     "sys_ui_title": {
         "name": "Document Title",
@@ -858,15 +849,14 @@
         "fields": {
             "script": ".js"
         },
-        "subDirPattern": "active_<active>"
+        "subDirPattern": null
     },
     "sys_widgets": {
         "name": "Widget",
         "key": "name",
         "fields": {
             "script": ".js"
-        },
-        "subDirPattern": "active_<active>"
+        }
     },
     "sys_ws_operation": {
         "name": "Scripted REST Resource",
@@ -874,7 +864,7 @@
         "fields": {
             "operation_script": ".js"
         },
-        "subDirPattern": "<web_service_definition!dv>/active_<active>"
+        "subDirPattern": "<web_service_definition!dv>/<web_service_version!dv>"
     },
     "sysauto": {
         "name": "Scheduled Job",
@@ -900,8 +890,7 @@
         ],
         "fields": {
             "condition": ".js"
-        },
-        "subDirPattern": "active_<active>"
+        }
     },
     "sysauto_custom_chart": {
         "name": "Scheduled Email of Custom Chart",
@@ -925,7 +914,7 @@
         "fields": {
             "script": ".js"
         },
-        "subDirPattern": "active_<active>/<run_type>"
+        "subDirPattern": "<sys_class_name>"
     },
     "sysevent_email_action": {
         "name": "Notification",
@@ -937,7 +926,7 @@
             "message_text": ".xhtml",
             "sms_alternate": ".xhtml"
         },
-        "subDirPattern": "active_<active>"
+        "subDirPattern": "<collection>"
     },
     "sysevent_email_style": {
         "name": "Stationery",
@@ -965,11 +954,10 @@
             "script": ".js",
             "reply_email": ".xhtml"
         },
-        "subDirPattern": "active_<active>"
+        "subDirPattern": "<table>"
     },
     "sysevent_script_action": {
-        "name": "Script Action",
-        "subDirPattern": "active_<active>"
+        "name": "Script Action"
     },
     "sysrule_escalate": {
         "name": "Service Level Agreement",
@@ -986,7 +974,7 @@
         "fields": {
             "script": ".js"
         },
-        "subDirPattern": "active_<active>"
+        "subDirPattern": null
     },
     "u_maintenance_message": {
         "name": "Maintenance Message",
@@ -1011,7 +999,7 @@
         "fields": {
             "script": ".js"
         },
-        "subDirPattern": "active_<active>"
+        "subDirPattern": null
     },
     "wf_activity_definition": {
         "name": "Workflow Activity Definition",
@@ -1045,14 +1033,14 @@
         "key": "name",
         "json": true,
         "query": "active=true",
-        "subDirPattern": "active_<active>"
+        "subDirPattern": null
     },
     "sys_atf_test": {
         "name": "ATF Test",
         "key": "name",
         "json": true,
         "query": "active=true",
-        "subDirPattern": "active_<active>"
+        "subDirPattern": null
     },
     "sys_atf_step": {
         "name": "ATF Test Step",
@@ -1061,6 +1049,6 @@
             "inputs": ".js"
         },
         "query": "active=true^display_name=Run Server Side Script",
-        "subDirPattern": "active_<active>"
+        "subDirPattern": null
     }
 }

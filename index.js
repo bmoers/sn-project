@@ -348,7 +348,7 @@ SnProject.prototype.deleteRecordById = function (_id) {
 
 
 /**
- * Deltete the branch information from the DB
+ * Delete the branch information from the DB
  * NOT THE FILES!
  * @param {String} branch optional branch name [self.config.branch]
  * @returns {Promise}
@@ -882,7 +882,7 @@ SnProject.prototype.save = function (file) {
                         _id: jsDoc.file,
                         sysId: `${sysId}.JSCDOC`,
                         path: jsDoc.file,
-                        updatedBy: 'system',
+                        updatedBy,
                         modified: true
                     });
                 });

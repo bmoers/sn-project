@@ -712,7 +712,11 @@ SnProject.prototype.save = function (file) {
                     return out;
                 }
                 const field = file[key];
-                out[key] = convert(field.value !== undefined ? field.value : field);
+                if (field === null) {
+                    out[key] = field;
+                } else {
+                    out[key] = convert(field.value !== undefined ? field.value : field);
+                }
                 return out;
             }, {});
         };

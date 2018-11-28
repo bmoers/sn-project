@@ -845,8 +845,8 @@
     },
     "sys_variable_value": {
         "name": "Values",
-        "key": "sys_id",
-        "query": "valueLIKE(^valueLIKE{^valueLIKEfunction^ORvalueLIKE}())^valueNOT LIKE<mail_script>^valueNOT LIKE</script>",
+        "key": "<document_key!dv>",
+        "query": "variable.internal_type=script^ORvariable.internal_type=script_plain^ORvariable.internal_type=script_server",
         "fields": {
             "value": ".js"
         },

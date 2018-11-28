@@ -5,7 +5,7 @@ var Promise = require('bluebird'),
     path = require("path");
 
 var pfile = require('./lib/project-file');
-var sanitize = require("sanitize-filename"),
+var sanitizeFileName = require("sanitize-filename"),
     assign = require('object-assign-deep'),
     crypto = require('crypto'),
     copy = require('recursive-copy');
@@ -13,6 +13,9 @@ var sanitize = require("sanitize-filename"),
 var Datastore = require('nedb'),
     defaultFields = ['sys_scope.name','sys_scope.scope', 'sys_scope', 'sys_class_name', 'sys_created_by', 'sys_created_on', 'sys_customer_update', 'sys_id', 'sys_mod_count', 'sys_name', 'sys_package', 'sys_policy', 'sys_replace_on_upgrade', 'sys_updated_by', 'sys_updated_on', 'sys_update_name'];
 
+const sanitize = (value) => {
+    return sanitizeFileName(value).replace(/\s{2,}/g, " ");
+};
     
 const deleteRecord = function (record) {
     var self = this;
@@ -721,12 +724,70 @@ SnProject.prototype.save = function (file) {
             }, {});
         };
 
+        const conditionPass = (entity, file = {}) => {
+            if (!entity)
+                return false;
+            if (!entity.query)
+                return true;
+            
+            // "valueLIKE(^valueLIKE{^valueLIKEfunction^ORvalueLIKE}())^valueNOT LIKE<mail_script>^valueNOT LIKE</script>"
+            // https://docs.servicenow.com/bundle/london-application-development/page/use/common-ui-elements/reference/r_OpAvailableFiltersQueries.html#r_OpAvailableFiltersQueries
+            return entity.query.split('^NQ').some((segment) => {
+                const ands = segment.split(/\^(?!OR)/);
+                return ands.every((and) => {
+                    const ors = and.split(/\^OR/);
+                    return ors.some((or) => {
+                        const op = or.split(/(!=|<=|>=|=|<|>|LIKE|CONTAINS|STARTSWITH|NOT LIKE|DOES NOT CONTAIN|IN)/);
+                        const field = op[0];
+                        const operator = op[1];
+                        const term = decodeURI(op.slice(2).join('')); // in case the value also contains < or >
+                        const valueField = file[field];
+
+                        if (valueField === undefined)
+                            return true;
+                        
+                        const value = String(((valueField.value !== undefined) ? valueField.value : valueField)).valueOf();
+                        switch (operator) {
+                            case '=':
+                                return (value == term);
+                            case '!=':
+                                return (value != term);
+                            case '<':
+                                return (value < term);
+                            case '>':
+                                return (value > term);
+                            case '<=':
+                                return (value <= term);
+                            case '>=':
+                                return (value >= term);
+                            case 'LIKE':
+                                return (value.toLowerCase().includes(term.toLowerCase()));
+                            case 'CONTAINS':
+                                return (value.toLowerCase().includes(term.toLowerCase()));
+                            case 'STARTSWITH':
+                                return (value.toLowerCase().indexOf(term.toLowerCase()) === 0);
+                            case 'NOT LIKE':
+                                return (!value.toLowerCase().includes(term.toLowerCase()));
+                            case 'DOES NOT CONTAIN':
+                                return (!value.toLowerCase().includes(term.toLowerCase()));
+                            case 'IN':
+                                return (term.toLowerCase().split(',').map((a) => a.trim()).includes(value.toLowerCase()));
+                            default:
+                                return false;
+                        }
+                    })
+                })
+            });
+        }
+
         const entity = self.getEntity(className);
+        const entityQueryMatch = conditionPass(entity, file);
+
         let entityFileUUID;
         let jsDoc;
 
         return Promise.try(function () {
-            if (entity) {
+            if (entityQueryMatch) {
                 var entityFullName = entity.name;
                 
                 entityFileUUID = fileUUID.concat(entityFullName);
@@ -759,7 +820,7 @@ SnProject.prototype.save = function (file) {
                     
                 } else {
 
-                    // know entity in text format
+                    // known entity in text format
                     var fields = entity.fields || {},
                         fieldKeys = Object.keys(fields);
 
@@ -825,9 +886,9 @@ SnProject.prototype.save = function (file) {
             }
         
         }).then(() => {
-            if (self.config.allEntitiesAsJson || (!entity && self.config.includeUnknownEntities)) {
+            if (self.config.allEntitiesAsJson || (!entityQueryMatch && self.config.includeUnknownEntities)) {
 
-                if (entity && entity.json) // dont save 2 versions of JSON
+                if (entityQueryMatch && entity.json) // dont save 2 versions of JSON
                     return;
                 
                 // save unknown entity as json on disk

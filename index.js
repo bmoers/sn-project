@@ -321,6 +321,29 @@ SnProject.prototype.getTests = function (branch) {
     });
 };
 
+SnProject.prototype.getTestSteps = function (branch) {
+    const self = this;
+    const className = 'sys_atf_step';
+    const query = {
+        className
+    };
+
+    if (branch) {
+        if (Array.isArray(branch)) {
+            branch.forEach((branchName) => {
+                query[`branch.${branchName}`] = { $exists: true }
+            });
+        } else {
+            query[`branch.${branch}`] = { $exists: true }
+        }
+    }
+    return self.db.findAsync(query).then((res) => {
+        if (!res)
+            return [];
+        return res.map((step) => ({ className, sysId: step._id }));
+    });
+};
+
 /*
 SnProject.prototype.getFileBySysId = function (sysId) {
     var self = this;

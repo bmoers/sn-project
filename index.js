@@ -746,7 +746,7 @@ SnProject.prototype.save = function (file) {
                         if (valueField === undefined)
                             return true;
                         
-                        const value = String(((valueField.value !== undefined) ? valueField.value : valueField)).valueOf();
+                        const value = String(((valueField !== null && valueField.value !== undefined) ? valueField.value : valueField)).valueOf();
                         switch (operator) {
                             case '=':
                                 return (value == term);

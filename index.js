@@ -807,11 +807,15 @@ SnProject.prototype.save = function (file) {
                     const fileName = sysId;
                     const entityJsonFileUUID = entityFileUUID.concat(fileName.concat(extension)).map((val) => sanitize(val));
                     
+                    const jsonFile = assign({}, file);
+                    if (jsonFile.____)
+                        delete jsonFile.____;
+
                     return add({
                         id: `JSON`,
                         fileName,
                         fileUUID: entityJsonFileUUID,
-                        body: JSON.stringify( removeDisplayValue(file) , null, 2),
+                        body: JSON.stringify(removeDisplayValue(jsonFile) , null, 2),
                         hash: crypto.createHash('md5').update(updatedOn.toString()).digest('hex'),
                         comments: null,
                         updatedBy,
@@ -895,7 +899,8 @@ SnProject.prototype.save = function (file) {
                 const extension = '.json';
                 const fileName = sysId;
                 const jsonFile = assign({}, file);
-
+                if (jsonFile.____)
+                    delete jsonFile.____;
 
                 let jsonFileUUID = fileUUID.concat(['_', className, fileName.concat(extension)]);
                 if (entity) {
@@ -925,7 +930,7 @@ SnProject.prototype.save = function (file) {
                     id: `JSON`,
                     fileName,
                     fileUUID: jsonFileUUID,
-                    body: JSON.stringify( removeDisplayValue(jsonFile) , null, 2),
+                    body: JSON.stringify(removeDisplayValue(jsonFile) , null, 2),
                     hash: crypto.createHash('md5').update(updatedOn.toString()).digest('hex'),
                     comments: null,
                     updatedBy,
@@ -1233,7 +1238,7 @@ var _substituteField = function (fieldValue, substituteObject) {
                     var payloadValue = substituteObject[alternative];                    
                     if (payloadValue !== undefined) {
                         // take the value automatically form result object or string
-                        var value = (typeof payloadValue == 'object') ? ((displayValue) ? payloadValue.display_value : payloadValue.value) : payloadValue;
+                        var value = (typeof payloadValue == 'object' && payloadValue !== null) ? ((displayValue) ? payloadValue.display_value : payloadValue.value) : payloadValue;
                         if (value !== undefined && value !== null) {
                             if (typeof value == 'string' && value.length === 0) // no substitution with empty string
                                 return false;

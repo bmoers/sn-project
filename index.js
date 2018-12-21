@@ -65,11 +65,16 @@ function SnProject(options, datastore) {
             target: 'README.md'
         }],
         defaultEntitiesFile: path.resolve(__dirname, 'config', 'entities.json'),
-        branch : 'master'
+        branch : 'master',
+        defaultFields: defaultFields,
+        sysFieldWhiteList: undefined
     }, options, {
             dbFileName : false
     });
     
+    if (Array.isArray(self.config.sysFieldWhiteList))
+        console.log(`Using SYS_* Field White-List '${self.config.sysFieldWhiteList.join(', ')}'`);
+
     self.config.dir = path.resolve(self.config.dir);
 
     self.db = (() => {
@@ -480,8 +485,17 @@ SnProject.prototype.getEntityRequestParam = function (className) {
     };
     
     var entity = self.getEntity(className);
-    if (!entity) // in case there is no such known entity
-        return requestArguments;
+    if (!entity) { // in case there is no such known entity
+        return assign({}, requestArguments, {
+            fieldNames: self.config.defaultFields.map((elementValue) => {
+                return {
+                    name: elementValue,
+                    optional: false,
+                    dv: false
+                };
+            })
+        });
+    }
 
     // if already processed, take form cache
     if (entity.requestArguments) {
@@ -490,7 +504,7 @@ SnProject.prototype.getEntityRequestParam = function (className) {
     
     var fieldNames = [],
         dv = false,
-        elementValues = defaultFields.concat([entity.key, entity.subDirPattern]).concat(Object.keys(entity.fields)),
+        elementValues = self.config.defaultFields.concat([entity.key, entity.subDirPattern]).concat(Object.keys(entity.fields)),
         queryFieldNames = [];
 
     if (entity.query) {
@@ -732,8 +746,13 @@ SnProject.prototype.save = function (file) {
          * @param {Object} file the REST response with display_value
          * @returns {Object} a copy of the file object with xml like structure
          */
-        const removeDisplayValue = (file) => {
-            return Object.keys(file).sort().reduce((out, key) => {
+        const flattenFile = (file) => {
+            const whiteList = Array.isArray(self.config.sysFieldWhiteList) ? self.config.sysFieldWhiteList : [];
+            const fields = (whiteList.length) ? Object.keys(file).filter((field) => {
+                return (!field.startsWith('sys_') || whiteList.includes(field));
+            }) : Object.keys(file);
+
+            return fields.sort().reduce((out, key) => {
                 if (key.indexOf(".") !== -1 || 'sys_tags' == key) {
                     return out;
                 }
@@ -838,7 +857,7 @@ SnProject.prototype.save = function (file) {
                         id: `JSON`,
                         fileName,
                         fileUUID: entityJsonFileUUID,
-                        body: JSON.stringify(removeDisplayValue(jsonFile) , null, 2),
+                        body: JSON.stringify(flattenFile(jsonFile) , null, 2),
                         hash: crypto.createHash('md5').update(updatedOn.toString()).digest('hex'),
                         comments: null,
                         updatedBy,
@@ -953,7 +972,7 @@ SnProject.prototype.save = function (file) {
                     id: `JSON`,
                     fileName,
                     fileUUID: jsonFileUUID,
-                    body: JSON.stringify(removeDisplayValue(jsonFile) , null, 2),
+                    body: JSON.stringify(flattenFile(jsonFile) , null, 2),
                     hash: crypto.createHash('md5').update(updatedOn.toString()).digest('hex'),
                     comments: null,
                     updatedBy,

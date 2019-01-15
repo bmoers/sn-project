@@ -202,6 +202,15 @@ SnProject.prototype.build = function () {
 
 };
 
+SnProject.prototype.cleanUp = function () {
+    const self = this;
+    const cleanDir = [path.resolve(self.config.dir, 'node_modules')];
+    return Promise.each(cleanDir, (dir) => {
+        console.log("deleting ", dir);
+        return fs.remove(dir);
+    });
+};
+
 SnProject.prototype.setup = function () {
     var self = this;
 

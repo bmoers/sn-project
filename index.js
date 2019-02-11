@@ -11,22 +11,25 @@ var sanitizeFileName = require("sanitize-filename"),
     copy = require('recursive-copy');
 
 var Datastore = require('nedb'),
-    defaultFields = ['sys_scope.name','sys_scope.scope', 'sys_scope', 'sys_class_name', 'sys_created_by', 'sys_created_on', 'sys_customer_update', 'sys_id', 'sys_mod_count', 'sys_name', 'sys_package', 'sys_policy', 'sys_replace_on_upgrade', 'sys_updated_by', 'sys_updated_on', 'sys_update_name'];
+    defaultFields = ['sys_scope.name', 'sys_scope.scope', 'sys_scope', 'sys_class_name', 'sys_created_by', 'sys_created_on', 'sys_customer_update', 'sys_id', 'sys_mod_count', 'sys_name', 'sys_package', 'sys_policy', 'sys_replace_on_upgrade', 'sys_updated_by', 'sys_updated_on', 'sys_update_name'];
 
 const sanitize = (value) => {
     return sanitizeFileName(value).replace(/\s{2,}/g, " ");
 };
-    
-const deleteRecord = function (record) {
+
+const deleteRecord = function (record, branchName) {
     var self = this;
     return Promise.try(() => {
         if (!record) {
             console.warn(`no record specified`);
             return;
         }
+
+        branchName = branchName || self.config.branch
+
         // remove the branch name from the file record
-        if (record.branch[self.config.branch]) {
-            delete record.branch[self.config.branch];
+        if (record.branch[branchName]) {
+            delete record.branch[branchName];
         }
 
         if (Object.keys(record.branch).length === 0) {
@@ -65,13 +68,13 @@ function SnProject(options, datastore) {
             target: 'README.md'
         }],
         defaultEntitiesFile: path.resolve(__dirname, 'config', 'entities.json'),
-        branch : 'master',
+        branch: 'master',
         defaultFields: defaultFields,
         sysFieldWhiteList: undefined
     }, options, {
-            dbFileName : false
-    });
-    
+            dbFileName: false
+        });
+
     if (Array.isArray(self.config.sysFieldWhiteList))
         console.log(`Using SYS_* Field White-List '${self.config.sysFieldWhiteList.join(', ')}'`);
 
@@ -95,7 +98,7 @@ function SnProject(options, datastore) {
         Promise.promisifyAll(dataStore);
         return dataStore;
     })();
-    
+
     if (!self.config.entities || self.config.entities.length === 0) {
         // load default entities
         self.config.entities = JSON.parse(fs.readFileSync(self.config.defaultEntitiesFile, 'utf8'));
@@ -129,7 +132,7 @@ SnProject.prototype.install = function () {
     var childProcess = spawn((os.platform() === 'win32' ? 'npm.cmd' : 'npm'), ['install'], {
         cwd: self.config.dir,
         detached: false,
-        env: assign({}, process.env, { NODE_ENV: 'development'})
+        env: assign({}, process.env, { NODE_ENV: 'development' })
     });
 
     return new Promise(function (resolve, reject) {
@@ -251,7 +254,7 @@ SnProject.prototype.setup = function () {
         console.log("Create directory '%s", directory);
         return pfile.mkdirpAsync(directory);
     }).then(function () {
-        
+
         /* 
             copy all directories
         */
@@ -263,7 +266,7 @@ SnProject.prototype.setup = function () {
                 console.log("Folder copy failed. Will slow down the build process but auto fixed with npm install.");
             });
         });
-        
+
     }).then(function () {
         /* 
             copy all config files
@@ -308,7 +311,7 @@ SnProject.prototype.getTestSuites = function (branch) {
     return self.db.findAsync(query).then((res) => {
         if (!res)
             return [];
-        return res.map((suite) => ({className, sysId: suite._id }));
+        return res.map((suite) => ({ className, sysId: suite._id }));
     });
 };
 
@@ -318,9 +321,9 @@ SnProject.prototype.getTests = function (branch) {
     const query = {
         className
     };
-    
+
     if (branch) {
-        if (Array.isArray(branch)){
+        if (Array.isArray(branch)) {
             branch.forEach((branchName) => {
                 query[`branch.${branchName}`] = { $exists: true }
             });
@@ -377,7 +380,7 @@ SnProject.prototype.getRecordById = function (_id) {
 
 SnProject.prototype.deleteRecordById = function (_id) {
     var self = this;
-    return self.db.findOneAsync({_id}).then((record) => {
+    return self.db.findOneAsync({ _id }).then((record) => {
         if (!record) {
             console.warn(`no record found with id ${_id}`);
             return;
@@ -398,20 +401,20 @@ SnProject.prototype.deleteBranch = function (branch) {
     const branchName = branch || self.config.branch;
     if (!branchName)
         return Promise.resolve();
-    
-    return self.db.findAsync({ [`branch.${branchName}`] : { $exists: true }}).then((filesInBranch) => {
+
+    return self.db.findAsync({ [`branch.${branchName}`]: { $exists: true } }).then((filesInBranch) => {
         console.log(`Deleting branch '${branchName}'. removing '${filesInBranch.length}' files from branch.`)
         return Promise.each(filesInBranch, (record) => {
-            return deleteRecord.call(self, record);
+            return deleteRecord.call(self, record, branchName);
         });
-    });  
+    });
 };
 
-SnProject.prototype.writeFile = function (filePath, content, options) {  
+SnProject.prototype.writeFile = function (filePath, content, options) {
     const self = this;
     const file = (Array.isArray(filePath)) ? path.join.apply(null, [self.config.dir].concat(filePath)) : path.join(self.config.dir, filePath);
     //console.log("write to ", file);
-    return pfile.writeFileAsync(file, content, options).then(()=> file);
+    return pfile.writeFileAsync(file, content, options).then(() => file);
 };
 
 SnProject.prototype.readFile = function (...args) {
@@ -437,7 +440,7 @@ SnProject.prototype.getEntity = function (className) {
     var entity = self.config.entities[className] || false;
     if (!entity)
         return false;
-    
+
     /*
         default entity structure
     */
@@ -456,7 +459,7 @@ SnProject.prototype.hasEntity = function (className) {
     var self = this;
     if (!className)
         return false;
-    
+
     return Boolean(self.config.entities[className]);
 };
 
@@ -464,7 +467,7 @@ SnProject.prototype.loadEntity = function (className) {
     var self = this;
     if (!className)
         return false;
-    
+
     return Boolean(self.config.allEntitiesAsJson || self.config.includeUnknownEntities || self.hasEntity(className));
 };
 
@@ -483,8 +486,8 @@ SnProject.prototype.loadJson = function () {
 SnProject.prototype.getEntityRequestParam = function (className) {
     var self = this;
     if (!className)
-        return;    
-    
+        return;
+
     // define the response structure
     var requestArguments = {
         className: className,
@@ -492,7 +495,7 @@ SnProject.prototype.getEntityRequestParam = function (className) {
         displayValue: false,
         queryFieldNames: []
     };
-    
+
     var entity = self.getEntity(className);
     if (!entity) { // in case there is no such known entity
         return assign({}, requestArguments, {
@@ -508,9 +511,9 @@ SnProject.prototype.getEntityRequestParam = function (className) {
 
     // if already processed, take form cache
     if (entity.requestArguments) {
-        return entity.requestArguments;    
+        return entity.requestArguments;
     }
-    
+
     var fieldNames = [],
         dv = false,
         elementValues = self.config.defaultFields.concat([entity.key, entity.subDirPattern]).concat(Object.keys(entity.fields)),
@@ -534,7 +537,7 @@ SnProject.prototype.getEntityRequestParam = function (className) {
     elementValues.filter(function (elementValue, index, ar) {
         return ar.indexOf(elementValue) === index;
     }).forEach(function (elementValue) {
-        if (elementValue) { 
+        if (elementValue) {
             fieldNames = fieldNames.concat(_parseField.call(self, elementValue));
         }
     });
@@ -564,44 +567,81 @@ SnProject.prototype.getEntityRequestParam = function (className) {
  * @property {Array} removedSysId the records which have to be removed
  * @returns {Array} the removed files
  */
-SnProject.prototype.remove = function (removeSysIds, callback) {
+SnProject.prototype.remove = function (removeFiles, callback) {
     var self = this;
+    var removedFilesFromDisk = [];
+
+    const removeIdArray = Array.isArray(removeFiles) ? removeFiles : (removeFiles) ? [removeFiles] : [];
+    if (removeIdArray.length === 0)
+        return Promise.resolve(removedFilesFromDisk);
+
+    //$or: [{ [`branch.${self.config.branch}`]: { $exists: true } }, { [`branch.${self.config.master.name}`]: { $exists: true } }]
+
+    //console.log("find for removed files in ", removeIdArray.map((remove) => remove.sysId))
+
     // find all existing which are marked to be deleted
-    //console.log("Removing", removedSysId);
     return self.db.findAsync({
-        _id: { $in: removeSysIds },
-        [`branch.${self.config.branch}`]: { $exists: true }
+        _id: { $in: removeIdArray.map((remove) => remove.sysId) }
     }).then(function (records) {
-
-        var removedFilesFromDisk = [];
-
+        //console.log('records found %j', records)
         return Promise.each(records, function (record) {
 
-            // delete all fields of this sys_id in this branch
-            return Promise.each(record.branch[self.config.branch].fields || [], (field) => {
-                var fieldFileOsPath = path.join.apply(null, [self.config.dir].concat(field.filePath));
-                return Promise.try(function () {
-                    if (callback) {
-                        return callback(fieldFileOsPath);
-                    } else {
-                        return pfile.deleteFileAsync(fieldFileOsPath);
-                    }
-                }).then(function (deleted) {
-                    if (deleted) {
-                        console.log('file successfully deleted %s', fieldFileOsPath);
-                        return deleteRecord.call(self, record).then(function () {
-                            removedFilesFromDisk.push(fieldFileOsPath);
-                        });
-                    } else {
-                        console.warn(`remove: file delete failed, file not found : ${fieldFileOsPath}`)
-                    }
-                }).then(function () {
-                    return pfile.deleteEmptyDirUpwards(fieldFileOsPath);
+            return Promise.each(Object.keys(record.branch), (branchName) => {
+
+                const branch = record.branch[branchName];
+                if (!branch || !branch.fields || !branch.fields.length)
+                    return;
+
+                // delete all fields of this sys_id in this branch
+                return Promise.each(branch.fields, (field) => {
+
+                    //field.hash = '-1';
+
+                    var fieldFileOsPath = path.join.apply(null, [self.config.dir].concat(field.filePath));
+                    //console.log('delete fieldFileOsPath', fieldFileOsPath);
+
+                    return Promise.try(function () {
+                        if (callback) {
+                            // external delete implementation
+                            return callback(fieldFileOsPath);
+                        } else {
+                            return pfile.deleteFileAsync(fieldFileOsPath);
+                        }
+                    }).then(function (deleted) {
+                        if (deleted) {
+                            field.hash = '-1';
+                            console.log('\t\tfile successfully deleted %s', fieldFileOsPath);
+                            removedFilesFromDisk.push({
+                                path: fieldFileOsPath,
+                                updatedBy: removeIdArray.reduce((user, file) => {
+                                    return (user != undefined) ? user : (file.sysId == record._id) ? file.updatedBy : undefined
+                                }, undefined)
+                            });
+                        } else {
+                            console.warn(`\t\tremove: file delete failed, file not found : ${fieldFileOsPath}`)
+                        }
+                    }).then(function () {
+                        return pfile.deleteEmptyDirUpwards(fieldFileOsPath);
+                    });
                 });
-            }).then(function () {
-                return removedFilesFromDisk;
+
+            }).then(() => {
+                return self.db.updateAsync({ _id: record._id }, record);
+                /*
+                //console.log('remainingFields', remainingFields);
+                branch.fields = remainingFields;
+                if (branch.fields.length === 0 || branchName == self.config.branch) { // no files for this record in this branch
+                    return deleteRecord.call(self, record, branchName);
+                } else {
+                    // update the record information with the updated fields
+                    return self.db.updateAsync({ _id: record._id }, record);
+                }
+                */
             });
+
         });
+    }).then(function () {
+        return removedFilesFromDisk;
     });
 };
 
@@ -614,16 +654,20 @@ SnProject.prototype.remove = function (removeSysIds, callback) {
  */
 SnProject.prototype.removeMissing = function (remainSysIds, callback) {
     var self = this;
+    var removedFilesFromDisk = [];
+
+    const remainIdArray = Array.isArray(remainSysIds) ? remainSysIds : (remainSysIds) ? [remainSysIds] : [];
+    if (remainIdArray.length === 0)
+        return Promise.resolve(removedFilesFromDisk);
+
     return self.db.findAsync({
         _id: { $nin: remainSysIds },
         [`branch.${self.config.branch}`]: { $exists: true }
     }).then(function (records) {
 
-        var removedFilesFromDisk = [];
-
         //console.log("Files in DB but not in the response: ", records);
         return Promise.each(records, function (record) {
-            
+
             // delete all fields of this sys_id in this branch
             return Promise.each(record.branch[self.config.branch].fields || [], (field) => {
                 var fieldFileOsPath = path.join.apply(null, [self.config.dir].concat(field.filePath));
@@ -635,21 +679,21 @@ SnProject.prototype.removeMissing = function (remainSysIds, callback) {
                     }
                 }).then(function (deleted) {
                     if (deleted) {
-                        return deleteRecord.call(self, record).then(function () {
-                            removedFilesFromDisk.push(fieldFileOsPath);
-                        });
+                        //console.log('removeMissing: file successfully deleted %s', fieldFileOsPath);
+                        removedFilesFromDisk.push(fieldFileOsPath);
                     } else {
                         console.warn(`removeMissing: file delete failed, file not found : ${fieldFileOsPath}`)
                     }
                 }).then(function () {
                     return pfile.deleteEmptyDirUpwards(fieldFileOsPath);
-                }); 
+                });
+            }).then(() => {
+                return deleteRecord.call(self, record);
             });
-            
-        }).then(function () {
-            return removedFilesFromDisk;
         });
-        
+
+    }).then(function () {
+        return removedFilesFromDisk;
     });
 };
 
@@ -680,10 +724,10 @@ SnProject.prototype.save = function (file) {
         file.____.updatedOn = updatedOn;
         updatedOn = new Date(updatedOn).getTime();
     }
-    
+
     // json files might also want to have an url...
     file.____.url = `/${className}.do?sys_id=${sysId}`;
-    
+
     const fileUUID = ['sn', appName];
     const filesOnDisk = [];
 
@@ -780,7 +824,7 @@ SnProject.prototype.save = function (file) {
                 return false;
             if (!entity.query)
                 return true;
-            
+
             // "valueLIKE(^valueLIKE{^valueLIKEfunction^ORvalueLIKE}())^valueNOT LIKE<mail_script>^valueNOT LIKE</script>"
             // https://docs.servicenow.com/bundle/london-application-development/page/use/common-ui-elements/reference/r_OpAvailableFiltersQueries.html#r_OpAvailableFiltersQueries
             return entity.query.split('^NQ').some((segment) => {
@@ -796,7 +840,7 @@ SnProject.prototype.save = function (file) {
 
                         if (valueField === undefined)
                             return true;
-                        
+
                         const value = String(((valueField !== null && valueField.value !== undefined) ? valueField.value : valueField)).valueOf();
                         switch (operator) {
                             case '=':
@@ -840,7 +884,7 @@ SnProject.prototype.save = function (file) {
         return Promise.try(function () {
             if (entityQueryMatch) {
                 var entityFullName = entity.name;
-                
+
                 entityFileUUID = fileUUID.concat(entityFullName);
                 const jsDocFileUUID = path.join.apply(null, [self.config.dir].concat(entityFileUUID, className.concat('.jsdoc')));
 
@@ -857,7 +901,7 @@ SnProject.prototype.save = function (file) {
                     const extension = '.json';
                     const fileName = sysId;
                     const entityJsonFileUUID = entityFileUUID.concat(fileName.concat(extension)).map((val) => sanitize(val));
-                    
+
                     const jsonFile = assign({}, file);
                     if (jsonFile.____)
                         delete jsonFile.____;
@@ -866,13 +910,13 @@ SnProject.prototype.save = function (file) {
                         id: `JSON`,
                         fileName,
                         fileUUID: entityJsonFileUUID,
-                        body: JSON.stringify(flattenFile(jsonFile) , null, 2),
+                        body: JSON.stringify(flattenFile(jsonFile), null, 2),
                         hash: crypto.createHash('md5').update(updatedOn.toString()).digest('hex'),
                         comments: null,
                         updatedBy,
                         updatedOn
                     });
-                    
+
                 } else {
 
                     // known entity in text format
@@ -939,13 +983,13 @@ SnProject.prototype.save = function (file) {
                     });
                 }
             }
-        
+
         }).then(() => {
             if (self.config.allEntitiesAsJson || (!entityQueryMatch && self.config.includeUnknownEntities)) {
 
                 if (entityQueryMatch && entity.json) // dont save 2 versions of JSON
                     return;
-                
+
                 // save unknown entity as json on disk
                 const extension = '.json';
                 const fileName = sysId;
@@ -959,7 +1003,7 @@ SnProject.prototype.save = function (file) {
                     jsonFileUUID = entityFileUUID.concat();
                     jsonFileUUID[jsonFileUUID.length - 1] = fileName.concat(extension); 
                     */
-                    
+
                     // link the fields which are created as file.
                     // this prevents from 'seeing' multiple changes in the branch
                     Object.keys(entity.fields || {}).forEach((key) => {
@@ -981,7 +1025,7 @@ SnProject.prototype.save = function (file) {
                     id: `JSON`,
                     fileName,
                     fileUUID: jsonFileUUID,
-                    body: JSON.stringify(flattenFile(jsonFile) , null, 2),
+                    body: JSON.stringify(flattenFile(jsonFile), null, 2),
                     hash: crypto.createHash('md5').update(updatedOn.toString()).digest('hex'),
                     comments: null,
                     updatedBy,
@@ -1009,12 +1053,12 @@ SnProject.prototype.save = function (file) {
                 });
             });
         }).then(() => fileObjectArray);
-        
+
     }).then((fileObjectArray) => {
         return self.db.findOneAsync({
             _id: sysId
         }).then((entityCache) => {
-            if (!entityCache){
+            if (!entityCache) {
                 entityCache = {
                     _id: sysId,
                     className,
@@ -1034,29 +1078,29 @@ SnProject.prototype.save = function (file) {
                     updatedOn,
                     fields: []
                 };
-            return { entityCache, fileObjectArray };          
+            return { entityCache, fileObjectArray };
         });
 
-    }).then(({ entityCache, fileObjectArray}) => {
-        
+    }).then(({ entityCache, fileObjectArray }) => {
+
         const branchObject = entityCache.branch[self.config.branch];
-        
+
         return Promise.each(fileObjectArray, function (fileObject) {
 
             const filePath = path.join.apply(null, fileObject.fileUUID);
             const cachedField = branchObject.fields.find((field) => {
                 return (field.id == fileObject.id)
             });
-            
+
             return new Promise.try(() => { // ensure the file-name is unique
-                
+
                 if (!cachedField) // file not in db yet
                     return;
-                
+
                 if (cachedField.filePath != filePath) { // the filePath has changed
                     const from = path.join.apply(null, [self.config.dir].concat(cachedField.filePath));
                     const to = path.join.apply(null, [self.config.dir].concat(filePath));
-                    
+
                     console.log(`\t\tRename file \n\t\t\tfrom '${from}' \n\t\t\tto   '${to}'`);
                     return pfile.move(from, to).then(() => {
                         cachedField.name = fileObject.fileName;
@@ -1068,22 +1112,22 @@ SnProject.prototype.save = function (file) {
                         return self.db.updateAsync({ _id: entityCache._id }, { $set: { [`branch.${self.config.branch}.fields`]: branchObject.fields } }, { upsert: true });
                     });
                 }
-            
+
             }).then(() => { // write the file on disk
-                
+
                 //var fieldFileOsPath = path.join.apply(null, [self.config.dir].concat(fileObject.fileUUID));
                 var fieldFileOsPath = path.join(self.config.dir, filePath);
                 return pfile.exists(fieldFileOsPath).then(function (exists) {
 
                     if (exists && cachedField && cachedField.hash == fileObject.hash) {
-                        
+
                         // the file has not changed, return here
                         console.log("\t\tfile has not changed, skip '%s'", filePath);
                         // update the branch information 
                         cachedField.updatedOn = fileObject.updatedOn;
                         return self.db.updateAsync({ _id: entityCache._id }, { $set: { [`branch.${self.config.branch}.fields`]: branchObject.fields } }, { upsert: true }).then(() => {
                             return false;
-                        });   
+                        });
                     }
 
                     const fieldObject = cachedField || {};
@@ -1101,7 +1145,7 @@ SnProject.prototype.save = function (file) {
                     }).then(() => {
                         return true;
                     });
-                    
+
                 }).then(function (modified) {
                     filesOnDisk.push({
                         _id: fileObject.fileName,
@@ -1113,7 +1157,7 @@ SnProject.prototype.save = function (file) {
                 });
             });
         });
-    }).then(function(){
+    }).then(function () {
         return filesOnDisk;
     });
 };
@@ -1278,7 +1322,7 @@ var _substituteField = function (fieldValue, substituteObject) {
                     displayValue = true;
                     alternative = alternative.slice(0, -3);
                 }
-                
+
                 if (alternative.indexOf('\'') === 0) {
                     // string alternative
                     substituteString = substituteString.replace(wholeKey, alternative.replace(/\'/g, ''));
@@ -1286,14 +1330,14 @@ var _substituteField = function (fieldValue, substituteObject) {
 
                 } else {
                     // variable alternative
-                    var payloadValue = substituteObject[alternative];                    
+                    var payloadValue = substituteObject[alternative];
                     if (payloadValue !== undefined) {
                         // take the value automatically form result object or string
                         var value = (typeof payloadValue == 'object' && payloadValue !== null) ? ((displayValue) ? payloadValue.display_value : payloadValue.value) : payloadValue;
                         if (value !== undefined && value !== null) {
                             if (typeof value == 'string' && value.length === 0) // no substitution with empty string
                                 return false;
-                            
+
                             substituteString = substituteString.replace(wholeKey, value);
                             return true;
                         }

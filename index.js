@@ -609,7 +609,7 @@ SnProject.prototype.remove = function (removeFiles, callback) {
                         }
                     }).then(function (deleted) {
                         if (deleted) {
-                            field.hash = '-1';
+                            field.hash = '-1'; // reset the hash but dont delete the record from the DB
                             console.log('\t\tfile successfully deleted %s', fieldFileOsPath);
                             removedFilesFromDisk.push({
                                 path: fieldFileOsPath,
@@ -671,22 +671,32 @@ SnProject.prototype.removeMissing = function (remainSysIds, callback) {
             // delete all fields of this sys_id in this branch
             return Promise.each(record.branch[self.config.branch].fields || [], (field) => {
                 var fieldFileOsPath = path.join.apply(null, [self.config.dir].concat(field.filePath));
-                return Promise.try(function () {
-                    if (callback) {
-                        return callback(fieldFileOsPath);
-                    } else {
-                        return pfile.deleteFileAsync(fieldFileOsPath);
-                    }
-                }).then(function (deleted) {
-                    if (deleted) {
-                        //console.log('removeMissing: file successfully deleted %s', fieldFileOsPath);
-                        removedFilesFromDisk.push(fieldFileOsPath);
-                    } else {
-                        console.warn(`removeMissing: file delete failed, file not found : ${fieldFileOsPath}`)
-                    }
-                }).then(function () {
-                    return pfile.deleteEmptyDirUpwards(fieldFileOsPath);
+
+                return pfile.exists(fieldFileOsPath).then((exists) => {
+                    // only process existing files
+                    if (!exists)
+                        return;
+
+                    return Promise.try(function () {
+                        if (callback) {
+                            return callback(fieldFileOsPath);
+                        } else {
+                            return pfile.deleteFileAsync(fieldFileOsPath);
+                        }
+                    }).then(function (deleted) {
+                        if (deleted) {
+                            //console.log('removeMissing: file successfully deleted %s', fieldFileOsPath);
+                            removedFilesFromDisk.push(fieldFileOsPath);
+                        } else {
+                            console.warn(`removeMissing: file delete failed, file not found : ${fieldFileOsPath}`)
+                        }
+                    }).then(function () {
+                        return pfile.deleteEmptyDirUpwards(fieldFileOsPath);
+                    });
+
                 });
+
+
             }).then(() => {
                 return deleteRecord.call(self, record);
             });

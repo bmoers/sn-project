@@ -612,6 +612,7 @@ SnProject.prototype.remove = function (removeFiles, callback) {
                             field.hash = '-1'; // reset the hash but dont delete the record from the DB
                             console.log('\t\tfile successfully deleted %s', fieldFileOsPath);
                             removedFilesFromDisk.push({
+                                sysId: record._id,
                                 path: fieldFileOsPath,
                                 updatedBy: removeIdArray.reduce((user, file) => {
                                     return (user != undefined) ? user : (file.sysId == record._id) ? file.updatedBy : undefined

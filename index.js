@@ -123,13 +123,13 @@ SnProject.prototype.getDirectory = function () {
 };
 */
 
-SnProject.prototype.install = function () {
+SnProject.prototype.install = function (silent) {
     var self = this;
 
     var spawn = require('child_process').spawn;
     var os = require('os');
 
-    var childProcess = spawn((os.platform() === 'win32' ? 'npm.cmd' : 'npm'), ['install'], {
+    var childProcess = spawn((os.platform() === 'win32' ? 'npm.cmd' : 'npm'), ['install', (silent) ? '--silent' : ''], {
         cwd: self.config.dir,
         detached: false,
         env: assign({}, process.env, { NODE_ENV: 'development' })

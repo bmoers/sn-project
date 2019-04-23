@@ -129,7 +129,7 @@ SnProject.prototype.install = function (silent) {
     var spawn = require('child_process').spawn;
     var os = require('os');
 
-    var childProcess = spawn((os.platform() === 'win32' ? 'npm.cmd' : 'npm'), ['install', (silent) ? '--silent' : ''], {
+    var childProcess = spawn((os.platform() === 'win32' ? 'npm.cmd' : 'npm'), ['install', (silent) ? '--silent' : '', '--no-audit'], {
         cwd: self.config.dir,
         detached: false,
         env: assign({}, process.env, { NODE_ENV: 'development' })

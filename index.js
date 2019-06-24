@@ -730,7 +730,7 @@ SnProject.prototype.save = function (file) {
     const updatedByField = file.sys_updated_by || file.sys_created_by || 'system';
     const updatedBy = file.____.updatedBy || updatedByField.display_value || updatedByField.value || updatedByField;
 
-    let updatedOn = file.____.updatedOn || file.sys_updated_on.value || file.sys_updated_on || file.sys_created_on.value || file.sys_created_on || -1;
+    let updatedOn = file.____.updatedOn || (file.sys_updated_on) ? file.sys_updated_on.value || file.sys_updated_on : (file.sys_created_on) ? file.sys_created_on.value || file.sys_created_on : -1;
     if (updatedOn) {
         file.____.updatedOn = updatedOn;
         updatedOn = new Date(updatedOn).getTime();
@@ -1367,7 +1367,7 @@ var _substituteField = function (fieldValue, substituteObject) {
             }
         }
     }
-
+    
     return substituteString;
 
 };

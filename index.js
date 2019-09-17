@@ -72,8 +72,8 @@ function SnProject(options, datastore) {
         defaultFields: defaultFields,
         sysFieldWhiteList: undefined
     }, options, {
-            dbFileName: false
-        });
+        dbFileName: false
+    });
 
     if (Array.isArray(self.config.sysFieldWhiteList))
         console.log(`Using SYS_* Field White-List '${self.config.sysFieldWhiteList.join(', ')}'`);
@@ -649,22 +649,28 @@ SnProject.prototype.remove = function (removeFiles, callback) {
 /**
  * Remove all records from DB and file system, which are NOT in the provided list.
  * 
- * @property {Array} allSysIds the records which have to stay
+ * @property {Array} remainSysIds the records which have to stay
  * @property {function} callback optional function to delete the file (e.g. git.delete())
- * @returns {Array} the removed files
+ * @returns {Promise<Array>} [path] the removed files
  */
 SnProject.prototype.removeMissing = function (remainSysIds, callback) {
     var self = this;
     var removedFilesFromDisk = [];
 
     const remainIdArray = Array.isArray(remainSysIds) ? remainSysIds : (remainSysIds) ? [remainSysIds] : [];
+    /*
     if (remainIdArray.length === 0)
         return Promise.resolve(removedFilesFromDisk);
-
-    return self.db.findAsync({
-        _id: { $nin: remainSysIds },
+    */
+   
+    const query = {
         [`branch.${self.config.branch}`]: { $exists: true }
-    }).then(function (records) {
+    };
+    if (remainIdArray.length !== 0) {
+        query._id = { $nin: remainSysIds };
+    }
+
+    return self.db.findAsync(query).then(function (records) {
 
         //console.log("Files in DB but not in the response: ", records);
         return Promise.each(records, function (record) {
@@ -1367,7 +1373,7 @@ var _substituteField = function (fieldValue, substituteObject) {
             }
         }
     }
-    
+
     return substituteString;
 
 };

@@ -129,7 +129,13 @@ SnProject.prototype.install = function (silent) {
     var spawn = require('child_process').spawn;
     var os = require('os');
 
-    var childProcess = spawn((os.platform() === 'win32' ? 'npm.cmd' : 'npm'), ['install', (silent) ? '--silent' : '', '--no-audit'], {
+    const lockFile = path.resolve(self.config.dir, 'package-lock.json');
+    // cun npm ci if lock file exist
+    const command = (fs.pathExistsSync(lockFile)) ? 'ci' : 'install';
+
+    const args = [command, (silent) ? '--silent' : '', '--no-audit'];
+
+    var childProcess = spawn((os.platform() === 'win32' ? 'npm.cmd' : 'npm'), args, {
         cwd: self.config.dir,
         detached: false,
         env: assign({}, process.env, { NODE_ENV: 'development' })
@@ -137,7 +143,7 @@ SnProject.prototype.install = function (silent) {
 
     return new Promise(function (resolve, reject) {
 
-        console.log("install node app in", self.config.dir);
+        console.log("install node app in", self.config.dir, args);
 
         var log = '';
         childProcess.stdout.on('data', function (buff) {
@@ -662,7 +668,7 @@ SnProject.prototype.removeMissing = function (remainSysIds, callback) {
     if (remainIdArray.length === 0)
         return Promise.resolve(removedFilesFromDisk);
     */
-   
+
     const query = {
         [`branch.${self.config.branch}`]: { $exists: true }
     };

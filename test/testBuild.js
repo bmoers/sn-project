@@ -1,18 +1,22 @@
+
+
+var Promise = require('bluebird');
 var Snproject = require('../index');
 var project = new Snproject({
-    dir: 'C:/cicd-server/repos/va',
+    dir: 'C:\\cicd\\user-test-20',
     appName: 'TestApp',
     dbName: 'TestDb',
     organization: 'TestOrg'
 });
 
-project.build().then((result) => {
-    console.log(result.log);
-}).catch((error) => {
-    console.log(error.log);
-    /*
-    console.log("---------------------------------------------------");
-    console.log(e);
-    console.log("---------------------------------------------------");
-    */
+Promise.try(() => {
+    return project.build(false);
+}).then((m) => {
+    console.log('installed', m.log)
+    return m;
+}).catch((e) => {
+    console.log('ERROR', e);
+}).then(() => {
+    console.log("End")
+    return true;
 });

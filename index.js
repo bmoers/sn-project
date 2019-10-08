@@ -1,7 +1,7 @@
 // -W083
 
 var Promise = require('bluebird'),
-    fs = Promise.promisifyAll(require("fs-extra")),
+    fs = require("fs-extra"),
     path = require("path");
 
 var pfile = require('./lib/project-file');
@@ -138,7 +138,7 @@ SnProject.prototype.install = function (silent) {
     var childProcess = spawn((os.platform() === 'win32' ? 'npm.cmd' : 'npm'), args, {
         cwd: self.config.dir,
         detached: false,
-        env: assign({}, process.env, { NODE_ENV: 'development' })
+        env: assign({}, process.env, { NODE_ENV: 'development', NO_UPDATE_NOTIFIER: 1 })
     });
 
     return new Promise(function (resolve, reject) {
@@ -179,7 +179,7 @@ SnProject.prototype.build = function () {
     var childProcess = spawn((os.platform() === 'win32' ? 'npm.cmd' : 'npm'), ['run-script', 'build'], { // build
         cwd: self.config.dir,
         detached: false,
-        env: process.env
+        env: assign({}, process.env, { NO_UPDATE_NOTIFIER: 1 })
     });
 
     return new Promise(function (resolve, reject) {
@@ -286,7 +286,7 @@ SnProject.prototype.setup = function () {
         /*
             create and configure a package.json file
         */
-        return fs.readFileAsync(path.resolve(self.config.templateDir, 'package.json'), 'utf8').then(function (text) {
+        return fs.readFile(path.resolve(self.config.templateDir, 'package.json'), 'utf8').then(function (text) {
             var packageDefinition = JSON.parse(text);
             var packageName = self.config.appName.toLowerCase();
             packageDefinition.name = '@'.concat(self.config.organization).concat('/').concat(packageName.replace(/\s+/g, "-").replace(/(?:^[\.|_])|[^a-z0-9\-\._~]/g, '').replace(/\-+/g, '-'));

@@ -1,6 +1,6 @@
 {
   "name": "sn-project",
-  "version": "3.9.0",
+  "version": "3.11.6",
   "description": "Replicate records from Service-Now to disc.",
   "main": "index.js",
   "scripts": {
@@ -10,7 +10,7 @@
   "license": "LGPL-3.0",
   "dependencies": {
     "any-shell-escape": "^0.1.1",
-    "bluebird": "^3.5.3",
+    "bluebird": "^3.7.0",
     "command-exists": "^1.2.8",
     "delete-empty": "^2.0.0",
     "fs-extra": "^5.0.0",

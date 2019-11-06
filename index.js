@@ -1121,17 +1121,26 @@ SnProject.prototype.save = function (file) {
                     return;
 
                 if (cachedField.filePath != filePath) { // the filePath has changed
-                    const from = path.join.apply(null, [self.config.dir].concat(cachedField.filePath));
-                    const to = path.join.apply(null, [self.config.dir].concat(filePath));
 
-                    console.log(`\t\tRename file \n\t\t\tfrom '${from}' \n\t\t\tto   '${to}'`);
-                    return pfile.move(from, to).then(() => {
+                    const from = path.join(self.config.dir, cachedField.filePath);
+                    const to = path.join(self.config.dir, filePath);
+
+                    return pfile.exists(from).then((exists) => {
+                        if (!exists)
+                            return;
+
+                        console.log(`\t\tRename file \n\t\t\tfrom '${from}' \n\t\t\tto   '${to}'`);
+                        return pfile.move(from, to).then(() => {
+                            //console.log("Delete empty directory ", from);
+                            return pfile.deleteEmptyDirUpwards(from);
+                        }).catch((e) => {
+                            console.warn('File rename failed', e);
+                        })
+                    }).then(() => {
+
                         cachedField.name = fileObject.fileName;
                         cachedField.filePath = filePath;
-                    }).then(() => {
-                        //console.log("Delete empty directory ", from);
-                        return pfile.deleteEmptyDirUpwards(from);
-                    }).then(() => {
+
                         return self.db.updateAsync({ _id: entityCache._id }, { $set: { [`branch.${self.config.branch}.fields`]: branchObject.fields } }, { upsert: true });
                     });
                 }

@@ -133,7 +133,7 @@ SnProject.prototype.install = function (silent) {
     // cun npm ci if lock file exist
     const command = (fs.pathExistsSync(lockFile)) ? 'ci' : 'install';
 
-    const args = [command, (silent) ? '--silent' : '', '--no-audit'];
+    const args = [command, (silent) ? '--silent' : '', '--no-audit', '--no-optional'];
 
     var childProcess = spawn((os.platform() === 'win32' ? 'npm.cmd' : 'npm'), args, {
         cwd: self.config.dir,
@@ -413,6 +413,45 @@ SnProject.prototype.deleteBranch = function (branch) {
         return Promise.each(filesInBranch, (record) => {
             return deleteRecord.call(self, record, branchName);
         });
+    });
+};
+/**
+ * Clone branch on DB level, no files are touched!
+ * @param {Boolean} hard do a hard reset, existing branch info are replaced [true]
+ * @param {String} sourceBranch the name of the source branch (master most of the time)
+ * @param {String} targetBranch the name of the target branch
+ */
+SnProject.prototype.cloneBranch = function (hard = true, sourceBranch, targetBranch) {
+    var self = this;
+    const sourceBranchName = sourceBranch || self.config.master.name;
+    const targetBranchName = targetBranch || self.config.branch;
+    if (!sourceBranchName || !targetBranchName)
+        return Promise.resolve();
+
+    console.log(`Cloning branch '${sourceBranchName}' into '${targetBranchName}'.`)
+
+    return self.db.findAsync({ [`branch.${sourceBranchName}`]: { $exists: true } }).then((filesInBranch) => {
+
+        return Promise.each(filesInBranch, (file) => {
+            file.branch[targetBranchName] = file.branch[sourceBranchName];
+            /*
+            if (hard || !file[targetBranchName]) {
+                // create, replace the target branch
+            } else {
+                // merge the target branch
+                const target = file.branch[targetBranchName]
+                const source = file.branch[sourceBranchName];
+                target.updatedBy = source.updatedBy;
+                target.updatedOn = source.updatedOn;
+                // walk all the source fields and add it to the target fields
+                target.fields = source.fields.map((s) => {
+                    return target.fields.find((t) => t.filePath == s.filePath && t.updatedOn > s.updatedOn) || s;
+                });
+            }
+            */
+            return self.db.updateAsync(file);
+        });
+
     });
 };
 
@@ -1121,17 +1160,26 @@ SnProject.prototype.save = function (file) {
                     return;
 
                 if (cachedField.filePath != filePath) { // the filePath has changed
-                    const from = path.join.apply(null, [self.config.dir].concat(cachedField.filePath));
-                    const to = path.join.apply(null, [self.config.dir].concat(filePath));
 
-                    console.log(`\t\tRename file \n\t\t\tfrom '${from}' \n\t\t\tto   '${to}'`);
-                    return pfile.move(from, to).then(() => {
+                    const from = path.join(self.config.dir, cachedField.filePath);
+                    const to = path.join(self.config.dir, filePath);
+
+                    return pfile.exists(from).then((exists) => {
+                        if (!exists)
+                            return;
+
+                        console.log(`\t\tRename file \n\t\t\tfrom '${from}' \n\t\t\tto   '${to}'`);
+                        return pfile.move(from, to).then(() => {
+                            //console.log("Delete empty directory ", from);
+                            return pfile.deleteEmptyDirUpwards(from);
+                        }).catch((e) => {
+                            console.warn('File rename failed', e);
+                        })
+                    }).then(() => {
+
                         cachedField.name = fileObject.fileName;
                         cachedField.filePath = filePath;
-                    }).then(() => {
-                        //console.log("Delete empty directory ", from);
-                        return pfile.deleteEmptyDirUpwards(from);
-                    }).then(() => {
+
                         return self.db.updateAsync({ _id: entityCache._id }, { $set: { [`branch.${self.config.branch}.fields`]: branchObject.fields } }, { upsert: true });
                     });
                 }

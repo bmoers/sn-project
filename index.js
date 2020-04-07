@@ -94,8 +94,24 @@ function SnProject(options, datastore) {
             filename: self.config.dbFileName,
             autoload: true
         });
+
         dataStore.ensureIndex({ fieldName: 'branch' });
+        dataStore.ensureIndex({ filename: 'sysId' });
+
         Promise.promisifyAll(dataStore);
+
+        datastore.find({ sysId: { $exists: false } }, (err, records) => {
+            if (err)
+                return console.log("nedb id update failed with ", err);
+            if (!records.length)
+                return;
+            console.log(`NEDB id fix. creating sysId fields for ${records.length} records`)
+            records.forEach((record) => {
+                // copy the _id (sysId) into the new field sysId
+                datastore.update({ _id: record._id }, { $set: { sysId: record._id } })
+            });
+
+        });
         return dataStore;
     })();
 
@@ -317,7 +333,7 @@ SnProject.prototype.getTestSuites = function (branch) {
     return self.db.findAsync(query).then((res) => {
         if (!res)
             return [];
-        return res.map((suite) => ({ className, sysId: suite._id }));
+        return res.map((suite) => ({ className, sysId: suite.sysId }));
     });
 };
 
@@ -340,7 +356,7 @@ SnProject.prototype.getTests = function (branch) {
     return self.db.findAsync(query).then((res) => {
         if (!res)
             return [];
-        return res.map((test) => ({ className, sysId: test._id }));
+        return res.map((test) => ({ className, sysId: test.sysId }));
     });
 };
 
@@ -363,21 +379,20 @@ SnProject.prototype.getTestSteps = function (branch) {
     return self.db.findAsync(query).then((res) => {
         if (!res)
             return [];
-        return res.map((step) => ({ className, sysId: step._id }));
+        return res.map((step) => ({ className, sysId: step.sysId }));
     });
 };
 
-/*
+
 SnProject.prototype.getFileBySysId = function (sysId) {
     var self = this;
-    return self.db.findOneAsync({ _id: sysId });
+    return self.db.findOneAsync({ sysId: sysId });
 };
 
 SnProject.prototype.deleteFileBySysId = function (sysId) {
     var self = this;
-    return self.db.removeAsync({ _id: sysId });
+    return self.db.removeAsync({ sysId: sysId });
 };
-*/
 
 SnProject.prototype.getRecordById = function (_id) {
     var self = this;
@@ -626,7 +641,7 @@ SnProject.prototype.remove = function (removeFiles, callback) {
 
     // find all existing which are marked to be deleted
     return self.db.findAsync({
-        _id: { $in: removeIdArray.map((remove) => remove.sysId) }
+        sysId: { $in: removeIdArray.map((remove) => remove.sysId) }
     }).then(function (records) {
         //console.log('records found %j', records)
         return Promise.each(records, function (record) {
@@ -657,10 +672,10 @@ SnProject.prototype.remove = function (removeFiles, callback) {
                             field.hash = '-1'; // reset the hash but dont delete the record from the DB
                             console.log('\t\tfile successfully deleted %s', fieldFileOsPath);
                             removedFilesFromDisk.push({
-                                sysId: record._id,
+                                sysId: record.sysId,
                                 path: fieldFileOsPath,
                                 updatedBy: removeIdArray.reduce((user, file) => {
-                                    return (user != undefined) ? user : (file.sysId == record._id) ? file.updatedBy : undefined
+                                    return (user != undefined) ? user : (file.sysId == record.sysId) ? file.updatedBy : undefined
                                 }, undefined)
                             });
                         } else {
@@ -712,7 +727,7 @@ SnProject.prototype.removeMissing = function (remainSysIds, callback) {
         [`branch.${self.config.branch}`]: { $exists: true }
     };
     if (remainIdArray.length !== 0) {
-        query._id = { $nin: remainSysIds };
+        query.sysId = { $nin: remainSysIds };
     }
 
     return self.db.findAsync(query).then(function (records) {
@@ -808,7 +823,7 @@ SnProject.prototype.save = function (file) {
                 }, () => {
                     return self.db.findOneAsync({
                         [`branch.${self.config.branch}.fields.filePath`]: filePath,
-                        _id: { $ne: sysId }
+                        sysId: { $ne: sysId }
                     }).then(function (doc) {
                         if (doc) {
                             counter++;
@@ -1118,11 +1133,11 @@ SnProject.prototype.save = function (file) {
 
     }).then((fileObjectArray) => {
         return self.db.findOneAsync({
-            _id: sysId
+            sysId: sysId
         }).then((entityCache) => {
             if (!entityCache) {
                 entityCache = {
-                    _id: sysId,
+                    sysId: sysId,
                     className,
                     appName,
                     branch: {
@@ -1180,7 +1195,7 @@ SnProject.prototype.save = function (file) {
                         cachedField.name = fileObject.fileName;
                         cachedField.filePath = filePath;
 
-                        return self.db.updateAsync({ _id: entityCache._id }, { $set: { [`branch.${self.config.branch}.fields`]: branchObject.fields } }, { upsert: true });
+                        return self.db.updateAsync({ sysId: entityCache.sysId }, { $set: { [`branch.${self.config.branch}.fields`]: branchObject.fields } }, { upsert: true });
                     });
                 }
 
@@ -1196,7 +1211,7 @@ SnProject.prototype.save = function (file) {
                         console.log("\t\tfile has not changed, skip '%s'", filePath);
                         // update the branch information 
                         cachedField.updatedOn = fileObject.updatedOn;
-                        return self.db.updateAsync({ _id: entityCache._id }, { $set: { [`branch.${self.config.branch}.fields`]: branchObject.fields } }, { upsert: true }).then(() => {
+                        return self.db.updateAsync({ sysId: entityCache.sysId }, { $set: { [`branch.${self.config.branch}.fields`]: branchObject.fields } }, { upsert: true }).then(() => {
                             return false;
                         });
                     }
@@ -1212,7 +1227,7 @@ SnProject.prototype.save = function (file) {
 
                     return pfile.writeFileAsync(fieldFileOsPath, fileObject.body).then(function () {
                         console.log("\t\tadd file '%s'", fieldFileOsPath);
-                        return self.db.updateAsync({ _id: entityCache._id }, entityCache, { upsert: true });
+                        return self.db.updateAsync({ sysId: entityCache.sysId }, entityCache, { upsert: true });
                     }).then(() => {
                         return true;
                     });

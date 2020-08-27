@@ -161,12 +161,13 @@ SnProject.prototype.install = function (silent) {
 
         console.log("install node app in", self.config.dir, args);
 
-        var log = '';
+        var stdout = '';
+        var stderr = '';
         childProcess.stdout.on('data', function (buff) {
-            log += buff.toString().replace(/\n+/, '\n');
+            stdout += buff.toString().replace(/\n+/, '\n');
         });
         childProcess.stderr.on('data', function (buff) {
-            log += buff.toString().replace(/\n+/, '\n');
+            stderr += buff.toString().replace(/\n+/, '\n');
         });
 
         childProcess.on('exit', function (code) {
@@ -174,12 +175,12 @@ SnProject.prototype.install = function (silent) {
             if (code > 0) {
                 return reject({
                     failed: true,
-                    log: log
+                    log: stdout.concat('\nERROR: ', stderr)
                 });
             }
             resolve({
                 failed: false,
-                log: log
+                log: stdout
             });
         });
 
@@ -202,12 +203,13 @@ SnProject.prototype.build = function () {
 
         console.log("build and test from", self.config.dir);
 
-        var log = '';
+        var stdout = '';
+        var stderr = '';
         childProcess.stdout.on('data', function (buff) {
-            log += buff.toString().replace(/\n+/, '\n');
+            stdout += buff.toString().replace(/\n+/, '\n');
         });
         childProcess.stderr.on('data', function (buff) {
-            log += buff.toString().replace(/\n+/, '\n');
+            stderr += buff.toString().replace(/\n+/, '\n');
         });
 
         childProcess.on('exit', function (code) {
@@ -215,12 +217,12 @@ SnProject.prototype.build = function () {
             if (code > 0) {
                 return reject({
                     failed: true,
-                    log: log
+                    log: stdout.concat('\nERROR: ', stderr)
                 });
             }
             resolve({
                 failed: false,
-                log: log
+                log: stdout
             });
         });
     });

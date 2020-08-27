@@ -11,14 +11,16 @@
   "dependencies": {
     "any-shell-escape": "^0.1.1",
     "bluebird": "^3.7.2",
-    "command-exists": "^1.2.8",
+    "command-exists": "^1.2.9",
     "delete-empty": "^2.0.0",
+    "eslint-plugin-import": "^2.22.0",
+    "eslint-plugin-node": "^11.1.0",
     "fs-extra": "^8.1.0",
     "gulp-git": "^2.10.1",
     "mkdirp": "^0.5.5",
     "nedb": "^1.8.0",
     "object-assign-deep": "^0.4.0",
-    "recursive-copy": "^2.0.10",
+    "recursive-copy": "^2.0.11",
     "sanitize-filename": "^1.6.3",
     "tmp": "^0.0.33"
   },
@@ -26,8 +28,8 @@
     "lib": "lib"
   },
   "devDependencies": {
-    "eslint": "^5.16.0",
-    "eslint-config-standard": "^12.0.0",
+    "eslint": "^7.7.0",
+    "eslint-config-standard": "^14.1.1",
     "eslint-plugin-promise": "^4.2.1",
     "eslint-plugin-standard": "^4.0.1",
     "fast-diff": "^1.2.0"

@@ -1114,51 +1114,53 @@ SnProject.prototype.save = function (file) {
         }).then(() => {
             return { fileObjectArray, jsDoc };
         });
-    }).then(({ fileObjectArray, jsDoc }) => { // create jsDoc file
-        return new Promise.try(function () {
-            if (!jsDoc || !jsDoc.file)
-                return;
-            return pfile.exists(jsDoc.file).then(function (exists) {
-                if (exists)
-                    return;
-                return pfile.writeFileAsync(jsDoc.file, jsDoc.body).then(() => {
-                    filesOnDisk.push({
-                        _id: jsDoc.file,
-                        sysId: `${sysId}.JSCDOC`,
-                        path: jsDoc.file,
-                        updatedBy,
-                        modified: true
-                    });
-                });
-            });
-        }).then(() => fileObjectArray);
+    }).then(async ({ fileObjectArray, jsDoc }) => { // create jsDoc file
 
-    }).then((fileObjectArray) => {
-        return self.db.findOneAsync({
-            sysId: sysId
-        }).then((entityCache) => {
-            if (!entityCache) {
-                entityCache = {
-                    sysId: sysId,
-                    className,
-                    appName,
-                    branch: {
-                        [self.config.branch]: {
-                            updatedBy,
-                            updatedOn,
-                            fields: []
-                        }
-                    }
-                };
-            }
-            if (!entityCache.branch[self.config.branch])
-                entityCache.branch[self.config.branch] = {
+        if (jsDoc && jsDoc.file) {
+            const exists = await pfile.exists(jsDoc.file);
+            if (!exists) {
+                await pfile.writeFileAsync(jsDoc.file, jsDoc.body);
+                filesOnDisk.push({
+                    _id: jsDoc.file,
+                    sysId: `${sysId}.JSCDOC`,
+                    path: jsDoc.file,
                     updatedBy,
-                    updatedOn,
-                    fields: []
-                };
-            return { entityCache, fileObjectArray };
+                    modified: true
+                });
+            }
+        }
+
+        return fileObjectArray;
+
+    }).then(async (fileObjectArray) => {
+
+        let entityCache = await self.db.findOneAsync({
+            sysId: sysId
         });
+
+        if (!entityCache) {
+            entityCache = await self.db.insertAsync({
+                sysId: sysId,
+                className,
+                appName,
+                branch: {
+                    [self.config.branch]: {
+                        updatedBy,
+                        updatedOn,
+                        fields: []
+                    }
+                }
+            });
+
+        } else if (!entityCache.branch[self.config.branch]) {
+            entityCache.branch[self.config.branch] = {
+                updatedBy,
+                updatedOn,
+                fields: []
+            };
+        }
+
+        return { entityCache, fileObjectArray };
 
     }).then(({ entityCache, fileObjectArray }) => {
 
@@ -1171,6 +1173,8 @@ SnProject.prototype.save = function (file) {
                 return (field.id == fileObject.id)
             });
 
+            let fileNameChanged = false;
+            
             return new Promise.try(() => { // ensure the file-name is unique
 
                 if (!cachedField) // file not in db yet
@@ -1187,62 +1191,75 @@ SnProject.prototype.save = function (file) {
 
                         console.log(`\t\tRename file \n\t\t\tfrom '${from}' \n\t\t\tto   '${to}'`);
                         return pfile.move(from, to).then(() => {
-                            //console.log("Delete empty directory ", from);
+                            fileNameChanged = true;
+
                             return pfile.deleteEmptyDirUpwards(from);
                         }).catch((e) => {
                             console.warn('File rename failed', e);
                         })
-                    }).then(() => {
-
-                        cachedField.name = fileObject.fileName;
-                        cachedField.filePath = filePath;
-
-                        return self.db.updateAsync({ sysId: entityCache.sysId }, { $set: { [`branch.${self.config.branch}.fields`]: branchObject.fields } }, { upsert: true });
                     });
                 }
 
-            }).then(() => { // write the file on disk
+            }).then(async () => { // write the file on disk
 
                 //var fieldFileOsPath = path.join.apply(null, [self.config.dir].concat(fileObject.fileUUID));
                 var fieldFileOsPath = path.join(self.config.dir, filePath);
-                return pfile.exists(fieldFileOsPath).then(function (exists) {
 
-                    if (exists && cachedField && cachedField.hash == fileObject.hash) {
+                let modified = false;
+                const exists = await pfile.exists(fieldFileOsPath);
 
-                        // the file has not changed, return here
-                        console.log("\t\tfile has not changed, skip '%s'", filePath);
-                        // update the branch information 
-                        cachedField.updatedOn = fileObject.updatedOn;
-                        return self.db.updateAsync({ sysId: entityCache.sysId }, { $set: { [`branch.${self.config.branch}.fields`]: branchObject.fields } }, { upsert: true }).then(() => {
-                            return false;
-                        });
-                    }
+                if (exists && !fileNameChanged && cachedField && cachedField.hash == fileObject.hash) {
 
-                    const fieldObject = cachedField || {};
-                    if (!cachedField) {
+                    // the file has not changed, return here
+                    console.log("\t\tfile has not changed, skip '%s'", filePath);
+                    // update the branch information 
+                    await self.db.updateAsync({ sysId: entityCache.sysId }, {
+                        $set: {
+                            [`branch.${self.config.branch}.updatedOn`]: fileObject.updatedOn,
+                            [`branch.${self.config.branch}.updatedBy`]: fileObject.updatedBy,
+                        }
+                    }, { upsert: true });
+                    // file untouched
+                    modified = false;
+
+                } else {
+
+                    branchObject.updatedOn = fileObject.updatedOn;
+                    branchObject.updatedBy = fileObject.updatedBy;
+
+                    if (cachedField) {
+                        cachedField.hash = fileObject.hash;
+                        cachedField.filePath = filePath;
+                        cachedField.name = fileObject.fileName;
+                    } else {
+                        // this is a new field
+                        const fieldObject = {
+                            id: fileObject.id,
+                            hash: fileObject.hash,
+                            filePath: filePath,
+                            name: fileObject.fileName
+                        };
                         branchObject.fields.push(fieldObject);
                     }
-                    fieldObject.id = fileObject.id;
-                    fieldObject.hash = fileObject.hash;
-                    fieldObject.filePath = filePath
-                    fieldObject.name = fileObject.fileName;
 
-                    return pfile.writeFileAsync(fieldFileOsPath, fileObject.body).then(function () {
-                        console.log("\t\tadd file '%s'", fieldFileOsPath);
-                        return self.db.updateAsync({ sysId: entityCache.sysId }, entityCache, { upsert: true });
-                    }).then(() => {
-                        return true;
-                    });
+                    console.log("\t\tadd file '%s'", fieldFileOsPath);
+                    await pfile.writeFileAsync(fieldFileOsPath, fileObject.body);
 
-                }).then(function (modified) {
-                    filesOnDisk.push({
-                        _id: fileObject.fileName,
-                        sysId: sysId,
-                        path: fieldFileOsPath,
-                        updatedBy: fileObject.updatedBy,
-                        modified: modified
-                    });
+                    await self.db.updateAsync({ sysId: entityCache.sysId }, { $set: { [`branch.${self.config.branch}`]: branchObject } }, { upsert: true });
+                    // file modified
+                    modified = true;
+
+                }
+
+                filesOnDisk.push({
+                    _id: fileObject.fileName,
+                    sysId: sysId,
+                    path: fieldFileOsPath,
+                    updatedBy: fileObject.updatedBy,
+                    modified: modified
                 });
+
+
             });
         });
     }).then(function () {

@@ -68,7 +68,7 @@ default-template/package-lock.json
 .eslintrc.js
 
 
-# in additional to .gitignore
+# in addition to .gitignore
 
 test/
 
@@ -76,3 +76,4 @@ example*
 ecosystem*
 *.env
 *.env*
+.github

@@ -1,7 +1,7 @@
 {
   "name": "sn-project",
   "version": "3.13.2",
-  "description": "Replicate records from Service-Now to disc.",
+  "description": "Replicate records from Service-Now to local disk",
   "main": "index.js",
   "scripts": {
     "test": "exit 0"
@@ -12,27 +12,25 @@
     "any-shell-escape": "^0.1.1",
     "bluebird": "^3.7.2",
     "command-exists": "^1.2.9",
-    "delete-empty": "^2.0.0",
-    "eslint-plugin-import": "^2.22.0",
-    "eslint-plugin-node": "^11.1.0",
-    "fs-extra": "^8.1.0",
+    "delete-empty": "2.0.0",
+    "fs-extra": "^9.1.0",
     "gulp-git": "^2.10.1",
-    "mkdirp": "^0.5.5",
     "nedb": "^1.8.0",
     "object-assign-deep": "^0.4.0",
     "recursive-copy": "^2.0.11",
     "sanitize-filename": "^1.6.3",
-    "tmp": "^0.0.33"
+    "tmp-promise": "^3.0.2"
   },
   "directories": {
     "lib": "lib"
   },
   "devDependencies": {
     "dotenv": "^8.2.0",
-    "eslint": "^7.7.0",
-    "eslint-config-standard": "^14.1.1",
-    "eslint-plugin-promise": "^4.2.1",
-    "eslint-plugin-standard": "^4.0.1",
+    "eslint": "^7.22.0",
+    "eslint-config-standard": "^16.0.2",
+    "eslint-plugin-import": "^2.22.1",
+    "eslint-plugin-node": "^11.1.0",
+    "eslint-plugin-promise": "^4.3.1",
     "fast-diff": "^1.2.0"
   },
   "repository": {

@@ -1,15 +1,17 @@
+require('dotenv').config();
 const Git = require('../lib/git');
 
 
 const git = new Git({
-    dir: 'C:\\cicd\\user-test-20',
+    dir: process.env.GIT_TEST_DIR,
     user: {
-        name: "bmoers",
-        email: "boris@moers.ch",
-        password: "********************************",
-        store: true
+        name: process.env.GIT_USER_NAME,
+        email: process.env.GIT_USER_EMAIL,
+        password: process.env.GIT_PASSWORD,
+        store: process.env.GIT_STORE == 'true'
     },
-    remoteUrl: "https://github.com/bmoers/a_global_scoped_app.git"
+    remoteUrl: process.env.GIT_URL,
+    quiet: process.env.GIT_QUIET == 'true'
 })
 
 git.init('no-build');

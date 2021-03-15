@@ -11,7 +11,8 @@ const git = new Git({
         store: process.env.GIT_STORE == 'true'
     },
     remoteUrl: process.env.GIT_URL,
-    quiet: process.env.GIT_QUIET == 'true'
+    quiet: process.env.GIT_QUIET == 'true',
+    gitignore : ['.g','.c','.d','.e','.f']
 })
 
 git.init('no-build');

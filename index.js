@@ -19,7 +19,7 @@ const sanitize = (value) => {
 
 const deleteRecord = function (record, branchName) {
     var self = this;
-    return Promise.try(() => {
+    return Promise.try(async () => {
         if (!record) {
             console.warn(`no record specified`);
             return;
@@ -29,6 +29,7 @@ const deleteRecord = function (record, branchName) {
 
         // remove the branch name from the file record
         if (record.branch[branchName]) {
+            await self.removeFromCache(record.branch[branchName]);
             delete record.branch[branchName];
         }
 
@@ -114,6 +115,68 @@ function SnProject(options, datastore) {
         });
         return dataStore;
     })();
+
+    self.cache = null;
+    self.updateCache = async ({ fields }, sysId) => {
+        if(!self.cache)
+            return;
+        if (!fields || !sysId)
+            return;
+        await Promise.each(fields, (field) => {
+            self.cache[field.filePath] = sysId;
+        });
+    };
+    self.removeFromCache = async ({ fields }) => {
+        if (!self.cache)
+            return;
+        if (!fields)
+            return;
+        await Promise.each(fields, (field) => {
+            delete self.cache[field.filePath];
+        });
+    };
+    self.removeFromCacheBySysId = async (sysId) => {
+        if (!self.cache)
+            return;
+        if (!sysId)
+            return;
+        const keys = Object.keys(self.cache);
+        await Promise.each(keys, (key) => {
+            if (self.cache[key] == sysId)
+                delete self.cache[key];
+        })
+    };
+    self.renameInCache = (from, to) => {
+        if (!self.cache)
+            return;
+        if(!from || !to)
+            return;
+        if(!self.cache[from])
+            return;
+        self.cache[to] = self.cache[from]; 
+        delete self.cache[from];
+    };
+    self.getCache = async () => {
+        if (self.cache)
+            return self.cache;
+
+        const filesInBranch = await self.db.findAsync({ [`branch.${self.config.branch}`]: { $exists: true } });
+
+        //console.log(`Cache :: File num: ${filesInBranch.length}; Branch: ${self.config.branch}`);
+
+        const cache = filesInBranch.reduce((out, file) => {
+            file.branch[self.config.branch].fields.forEach((field) => {
+                //console.log(`Cache :: Adding ${field.filePath} : ${file.sysId}`);
+                out[field.filePath] = file.sysId;
+            })
+            return out;
+        }, {});
+
+        self.cache = cache;
+        console.log(`Cache :: refreshed for branch '${self.config.branch}'. Cache size: ${Object.keys(self.cache).length}`);
+        
+        return self.cache;
+    }
 
     if (!self.config.entities || self.config.entities.length === 0) {
         // load default entities
@@ -391,8 +454,9 @@ SnProject.prototype.getFileBySysId = function (sysId) {
     return self.db.findOneAsync({ sysId: sysId });
 };
 
-SnProject.prototype.deleteFileBySysId = function (sysId) {
+SnProject.prototype.deleteFileBySysId = async function (sysId) {
     var self = this;
+    await self.removeFromCacheBySysId(sysId)
     return self.db.removeAsync({ sysId: sysId });
 };
 
@@ -648,11 +712,13 @@ SnProject.prototype.remove = function (removeFiles, callback) {
         //console.log('records found %j', records)
         return Promise.each(records, function (record) {
 
-            return Promise.each(Object.keys(record.branch), (branchName) => {
+            return Promise.each(Object.keys(record.branch), async (branchName) => {
 
                 const branch = record.branch[branchName];
                 if (!branch || !branch.fields || !branch.fields.length)
                     return;
+
+                await self.removeFromCache(branch);
 
                 // delete all fields of this sys_id in this branch
                 return Promise.each(branch.fields, (field) => {
@@ -766,7 +832,8 @@ SnProject.prototype.removeMissing = function (remainSysIds, callback) {
                 });
 
 
-            }).then(() => {
+            }).then(async () => {
+                await self.removeFromCache(record.branch[self.config.branch]);
                 return deleteRecord.call(self, record);
             });
         });
@@ -822,7 +889,27 @@ SnProject.prototype.save = function (file) {
                 const fileName = fileObject.fileUUID[last];
                 return promiseFor(function (next) {
                     return (next);
-                }, () => {
+                }, async () => {
+
+                    const cache = await self.getCache();
+                    const fileSysId = cache[filePath];
+                    if(!fileSysId){
+                        await self.updateCache({ fields: [{ filePath }] }, sysId);
+                        
+                    } else if(fileSysId && fileSysId != sysId){
+                        counter++;
+                        //console.warn("there is already an object with the same name but different sys_id! Renaming current file");
+                        fileObject.fileUUID[last] = fileName.replace(/(\.[^\.]+)$/, "_" + counter + "$1");
+                        filePath = path.join.apply(null, fileObject.fileUUID);
+                        //console.warn("\tto:", cacheKey);
+                        return (counter < 500);
+                    }
+                    return false;
+                    /*
+                    // ****************************************
+                    // this query is very very very expensive !
+                    // ****************************************
+
                     return self.db.findOneAsync({
                         [`branch.${self.config.branch}.fields.filePath`]: filePath,
                         sysId: { $ne: sysId }
@@ -837,6 +924,7 @@ SnProject.prototype.save = function (file) {
                         }
                         return false;
                     });
+                    */
                 }, true);
 
             }).then(() => { // add the file with unique filename
@@ -964,7 +1052,7 @@ SnProject.prototype.save = function (file) {
             if (entityQueryMatch) {
                 var entityFullName = entity.name;
 
-                entityFileUUID = fileUUID.concat(entityFullName);
+                entityFileUUID = fileUUID.concat(entityFullName).map((val) => sanitize(val));
                 const jsDocFileUUID = path.join.apply(null, [self.config.dir].concat(entityFileUUID, className.concat('.jsdoc')));
 
                 var keyValue = _substituteField.call(self, entity.key, file) || '{undefined name}';
@@ -1185,6 +1273,8 @@ SnProject.prototype.save = function (file) {
                     const from = path.join(self.config.dir, cachedField.filePath);
                     const to = path.join(self.config.dir, filePath);
 
+                    self.renameInCache(from, to);
+
                     return pfile.exists(from).then((exists) => {
                         if (!exists)
                             return;
@@ -1246,6 +1336,8 @@ SnProject.prototype.save = function (file) {
                     await pfile.writeFileAsync(fieldFileOsPath, fileObject.body);
 
                     await self.db.updateAsync({ sysId: entityCache.sysId }, { $set: { [`branch.${self.config.branch}`]: branchObject } }, { upsert: true });
+                    
+                    await self.updateCache(branchObject, entityCache.sysId);
                     // file modified
                     modified = true;
 

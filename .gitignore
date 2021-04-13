@@ -62,7 +62,5 @@ typings/
 develop
 dev
 /vscodeignore
-/eslintrc.json
-/jsconfig.json
+
 default-template/package-lock.json
-.eslintrc.js

@@ -13,7 +13,7 @@ const git = new Git({
     remoteUrl: process.env.GIT_URL,
     quiet: process.env.GIT_QUIET == 'true',
     gitignore : ['.g','.c','.d','.e','.f']
-})
+});
 
 git.init('no-build');
 

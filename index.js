@@ -1,11 +1,11 @@
 // -W083
 
 var Promise = require('bluebird'),
-    fs = require("fs-extra"),
-    path = require("path");
+    fs = require('fs-extra'),
+    path = require('path');
 
 var pfile = require('./lib/project-file');
-var sanitizeFileName = require("sanitize-filename"),
+var sanitizeFileName = require('sanitize-filename'),
     assign = require('object-assign-deep'),
     crypto = require('crypto'),
     copy = require('recursive-copy');
@@ -14,18 +14,18 @@ var Datastore = require('nedb'),
     defaultFields = ['sys_scope.name', 'sys_scope.scope', 'sys_scope', 'sys_class_name', 'sys_created_by', 'sys_created_on', 'sys_customer_update', 'sys_id', 'sys_mod_count', 'sys_name', 'sys_package', 'sys_policy', 'sys_replace_on_upgrade', 'sys_updated_by', 'sys_updated_on', 'sys_update_name'];
 
 const sanitize = (value) => {
-    return sanitizeFileName(value).replace(/\s{2,}/g, " ");
+    return sanitizeFileName(value).replace(/\s{2,}/g, ' ');
 };
 
 const deleteRecord = function (record, branchName) {
     var self = this;
     return Promise.try(async () => {
         if (!record) {
-            console.warn(`no record specified`);
+            console.warn('no record specified');
             return;
         }
 
-        branchName = branchName || self.config.branch
+        branchName = branchName || self.config.branch;
 
         // remove the branch name from the file record
         if (record.branch[branchName]) {
@@ -42,7 +42,7 @@ const deleteRecord = function (record, branchName) {
             // update the record information with the removed branch
             return self.db.updateAsync({ _id: record._id }, record);
         }
-    })
+    });
 };
 
 
@@ -83,12 +83,12 @@ function SnProject(options, datastore) {
 
     self.db = (() => {
         if (datastore) {
-            console.log("Project Datastore: use remote");
+            console.log('Project Datastore: use remote');
             self.config.dbFileName = 'remote';
             return datastore;
         }
 
-        console.log("Project Datastore: use local");
+        console.log('Project Datastore: use local');
         self.config.dbFileName = path.join(self.config.dir, 'config', `${self.config.dbName}.db`);
 
         const dataStore = new Datastore({
@@ -103,13 +103,13 @@ function SnProject(options, datastore) {
 
         datastore.find({ sysId: { $exists: false } }, (err, records) => {
             if (err)
-                return console.log("nedb id update failed with ", err);
+                return console.log('nedb id update failed with ', err);
             if (!records.length)
                 return;
-            console.log(`NEDB id fix. creating sysId fields for ${records.length} records`)
+            console.log(`NEDB id fix. creating sysId fields for ${records.length} records`);
             records.forEach((record) => {
                 // copy the _id (sysId) into the new field sysId
-                datastore.update({ _id: record._id }, { $set: { sysId: record._id } })
+                datastore.update({ _id: record._id }, { $set: { sysId: record._id } });
             });
 
         });
@@ -144,7 +144,7 @@ function SnProject(options, datastore) {
         await Promise.each(keys, (key) => {
             if (self.cache[key] == sysId)
                 delete self.cache[key];
-        })
+        });
     };
     self.renameInCache = (from, to) => {
         if (!self.cache)
@@ -168,7 +168,7 @@ function SnProject(options, datastore) {
             file.branch[self.config.branch].fields.forEach((field) => {
                 //console.log(`Cache :: Adding ${field.filePath} : ${file.sysId}`);
                 out[field.filePath] = file.sysId;
-            })
+            });
             return out;
         }, {});
 
@@ -176,7 +176,7 @@ function SnProject(options, datastore) {
         console.log(`Cache :: refreshed for branch '${self.config.branch}'. Cache size: ${Object.keys(self.cache).length}`);
         
         return self.cache;
-    }
+    };
 
     if (!self.config.entities || self.config.entities.length === 0) {
         // load default entities
@@ -222,7 +222,7 @@ SnProject.prototype.install = function (silent) {
 
     return new Promise(function (resolve, reject) {
 
-        console.log("install node app in", self.config.dir, args);
+        console.log('install node app in', self.config.dir, args);
 
         var stdout = '';
         var stderr = '';
@@ -264,7 +264,7 @@ SnProject.prototype.build = function () {
 
     return new Promise(function (resolve, reject) {
 
-        console.log("build and test from", self.config.dir);
+        console.log('build and test from', self.config.dir);
 
         var stdout = '';
         var stderr = '';
@@ -296,7 +296,7 @@ SnProject.prototype.cleanUp = function () {
     const self = this;
     const cleanDir = [path.resolve(self.config.dir, 'node_modules')];
     return Promise.each(cleanDir, (dir) => {
-        console.log("deleting ", dir);
+        console.log('deleting ', dir);
         return fs.remove(dir);
     });
 };
@@ -332,13 +332,13 @@ SnProject.prototype.setup = function () {
     */
     var copyDir = [];
 
-    console.log("Project setup");
+    console.log('Project setup');
 
     /*
         create all additional directories
     */
     return Promise.each(directories, function (directory) {
-        console.log("Create directory '%s", directory);
+        console.log('Create directory \'%s', directory);
         return pfile.mkdirpAsync(directory);
     }).then(function () {
 
@@ -346,11 +346,11 @@ SnProject.prototype.setup = function () {
             copy all directories
         */
         return Promise.each(copyDir, function (copyDir) {
-            console.log("Copy Directory Fom '%s', to '%s'", copyDir.from, copyDir.to);
+            console.log('Copy Directory Fom \'%s\', to \'%s\'', copyDir.from, copyDir.to);
             return copy(copyDir.from, copyDir.to, {
                 overwrite: false
             }).catch(() => {
-                console.log("Folder copy failed. Will slow down the build process but auto fixed with npm install.");
+                console.log('Folder copy failed. Will slow down the build process but auto fixed with npm install.');
             });
         });
 
@@ -359,7 +359,7 @@ SnProject.prototype.setup = function () {
             copy all config files
         */
         return Promise.each(copyFiles, function (copyFile) {
-            console.log("Copy File Fom '%s', to '%s'", copyFile.from, copyFile.to);
+            console.log('Copy File Fom \'%s\', to \'%s\'', copyFile.from, copyFile.to);
             return pfile.copyFileAsync(copyFile.from, copyFile.to, { overwrite: true });
         });
     }).then(function () {
@@ -370,10 +370,10 @@ SnProject.prototype.setup = function () {
         return fs.readFile(path.resolve(self.config.templateDir, 'package.json'), 'utf8').then(function (text) {
             var packageDefinition = JSON.parse(text);
             var packageName = self.config.appName.toLowerCase();
-            packageDefinition.name = '@'.concat(self.config.organization).concat('/').concat(packageName.replace(/\s+/g, "-").replace(/(?:^[\.|_])|[^a-z0-9\-\._~]/g, '').replace(/\-+/g, '-'));
+            packageDefinition.name = '@'.concat(self.config.organization).concat('/').concat(packageName.replace(/\s+/g, '-').replace(/(?:^[\.|_])|[^a-z0-9\-\._~]/g, '').replace(/\-+/g, '-'));
             return packageDefinition;
         }).then(function (packageDefinition) {
-            console.log("package.json created:", path.join(self.config.dir, 'package.json'));
+            console.log('package.json created:', path.join(self.config.dir, 'package.json'));
             return pfile.writeFileAsync(path.join(self.config.dir, 'package.json'), JSON.stringify(packageDefinition, null, '\t'));
         });
     });
@@ -389,10 +389,10 @@ SnProject.prototype.getTestSuites = function (branch) {
     if (branch) {
         if (Array.isArray(branch)) {
             branch.forEach((branchName) => {
-                query[`branch.${branchName}`] = { $exists: true }
+                query[`branch.${branchName}`] = { $exists: true };
             });
         } else {
-            query[`branch.${branch}`] = { $exists: true }
+            query[`branch.${branch}`] = { $exists: true };
         }
     }
     return self.db.findAsync(query).then((res) => {
@@ -412,10 +412,10 @@ SnProject.prototype.getTests = function (branch) {
     if (branch) {
         if (Array.isArray(branch)) {
             branch.forEach((branchName) => {
-                query[`branch.${branchName}`] = { $exists: true }
+                query[`branch.${branchName}`] = { $exists: true };
             });
         } else {
-            query[`branch.${branch}`] = { $exists: true }
+            query[`branch.${branch}`] = { $exists: true };
         }
     }
     return self.db.findAsync(query).then((res) => {
@@ -435,10 +435,10 @@ SnProject.prototype.getTestSteps = function (branch) {
     if (branch) {
         if (Array.isArray(branch)) {
             branch.forEach((branchName) => {
-                query[`branch.${branchName}`] = { $exists: true }
+                query[`branch.${branchName}`] = { $exists: true };
             });
         } else {
-            query[`branch.${branch}`] = { $exists: true }
+            query[`branch.${branch}`] = { $exists: true };
         }
     }
     return self.db.findAsync(query).then((res) => {
@@ -456,7 +456,7 @@ SnProject.prototype.getFileBySysId = function (sysId) {
 
 SnProject.prototype.deleteFileBySysId = async function (sysId) {
     var self = this;
-    await self.removeFromCacheBySysId(sysId)
+    await self.removeFromCacheBySysId(sysId);
     return self.db.removeAsync({ sysId: sysId });
 };
 
@@ -490,7 +490,7 @@ SnProject.prototype.deleteBranch = function (branch) {
         return Promise.resolve();
 
     return self.db.findAsync({ [`branch.${branchName}`]: { $exists: true } }).then((filesInBranch) => {
-        console.log(`Deleting branch '${branchName}'. removing '${filesInBranch.length}' files from branch.`)
+        console.log(`Deleting branch '${branchName}'. removing '${filesInBranch.length}' files from branch.`);
         return Promise.each(filesInBranch, (record) => {
             return deleteRecord.call(self, record, branchName);
         });
@@ -509,7 +509,7 @@ SnProject.prototype.cloneBranch = function (hard = true, sourceBranch, targetBra
     if (!sourceBranchName || !targetBranchName)
         return Promise.resolve();
 
-    console.log(`Cloning branch '${sourceBranchName}' into '${targetBranchName}'.`)
+    console.log(`Cloning branch '${sourceBranchName}' into '${targetBranchName}'.`);
 
     return self.db.findAsync({ [`branch.${sourceBranchName}`]: { $exists: true } }).then((filesInBranch) => {
 
@@ -600,7 +600,7 @@ SnProject.prototype.loadEntity = function (className) {
 SnProject.prototype.loadJson = function () {
     const self = this;
     return Boolean(self.config.allEntitiesAsJson || self.config.includeUnknownEntities);
-}
+};
 
 /**
  * parse an entity int to a requestArguments object
@@ -743,11 +743,11 @@ SnProject.prototype.remove = function (removeFiles, callback) {
                                 sysId: record.sysId,
                                 path: fieldFileOsPath,
                                 updatedBy: removeIdArray.reduce((user, file) => {
-                                    return (user != undefined) ? user : (file.sysId == record.sysId) ? file.updatedBy : undefined
+                                    return (user != undefined) ? user : (file.sysId == record.sysId) ? file.updatedBy : undefined;
                                 }, undefined)
                             });
                         } else {
-                            console.warn(`\t\tremove: file delete failed, file not found : ${fieldFileOsPath}`)
+                            console.warn(`\t\tremove: file delete failed, file not found : ${fieldFileOsPath}`);
                         }
                     }).then(function () {
                         return pfile.deleteEmptyDirUpwards(fieldFileOsPath);
@@ -823,7 +823,7 @@ SnProject.prototype.removeMissing = function (remainSysIds, callback) {
                             //console.log('removeMissing: file successfully deleted %s', fieldFileOsPath);
                             removedFilesFromDisk.push(fieldFileOsPath);
                         } else {
-                            console.warn(`removeMissing: file delete failed, file not found : ${fieldFileOsPath}`)
+                            console.warn(`removeMissing: file delete failed, file not found : ${fieldFileOsPath}`);
                         }
                     }).then(function () {
                         return pfile.deleteEmptyDirUpwards(fieldFileOsPath);
@@ -899,7 +899,7 @@ SnProject.prototype.save = function (file) {
                     } else if(fileSysId && fileSysId != sysId){
                         counter++;
                         //console.warn("there is already an object with the same name but different sys_id! Renaming current file");
-                        fileObject.fileUUID[last] = fileName.replace(/(\.[^\.]+)$/, "_" + counter + "$1");
+                        fileObject.fileUUID[last] = fileName.replace(/(\.[^\.]+)$/, '_' + counter + '$1');
                         filePath = path.join.apply(null, fileObject.fileUUID);
                         //console.warn("\tto:", cacheKey);
                         return (counter < 500);
@@ -928,15 +928,15 @@ SnProject.prototype.save = function (file) {
                 }, true);
 
             }).then(() => { // add the file with unique filename
-                fileObjectArray.push(fileObject)
+                fileObjectArray.push(fileObject);
             });
-        }
+        };
 
         const convert = (text) => {
             if (text === undefined || text === null)
                 return text;
 
-            if (typeof text == "object") {
+            if (typeof text == 'object') {
                 return Object.keys(text).reduce((out, key) => {
                     out[key] = convert(text[key]);
                     return out;
@@ -948,9 +948,9 @@ SnProject.prototype.save = function (file) {
             const textL = text.toString().toLowerCase();
             if (textL == 'null')
                 return null;
-            if (textL === "true" || textL === true)
+            if (textL === 'true' || textL === true)
                 return true;
-            if (textL === "false" || textL === false)
+            if (textL === 'false' || textL === false)
                 return false;
             if (text.length && !isNaN(text))
                 return Number(text);
@@ -973,7 +973,7 @@ SnProject.prototype.save = function (file) {
             }) : Object.keys(file);
 
             return fields.sort().reduce((out, key) => {
-                if (key.indexOf(".") !== -1 || 'sys_tags' == key) {
+                if (key.indexOf('.') !== -1 || 'sys_tags' == key) {
                     return out;
                 }
                 const field = file[key];
@@ -1010,37 +1010,37 @@ SnProject.prototype.save = function (file) {
 
                         const value = String(((valueField !== null && valueField.value !== undefined) ? valueField.value : valueField)).valueOf();
                         switch (operator) {
-                            case '=':
-                                return (value == term);
-                            case '!=':
-                                return (value != term);
-                            case '<':
-                                return (value < term);
-                            case '>':
-                                return (value > term);
-                            case '<=':
-                                return (value <= term);
-                            case '>=':
-                                return (value >= term);
-                            case 'LIKE':
-                                return (value.toLowerCase().includes(term.toLowerCase()));
-                            case 'CONTAINS':
-                                return (value.toLowerCase().includes(term.toLowerCase()));
-                            case 'STARTSWITH':
-                                return (value.toLowerCase().indexOf(term.toLowerCase()) === 0);
-                            case 'NOT LIKE':
-                                return (!value.toLowerCase().includes(term.toLowerCase()));
-                            case 'DOES NOT CONTAIN':
-                                return (!value.toLowerCase().includes(term.toLowerCase()));
-                            case 'IN':
-                                return (term.toLowerCase().split(',').map((a) => a.trim()).includes(value.toLowerCase()));
-                            default:
-                                return false;
+                        case '=':
+                            return (value == term);
+                        case '!=':
+                            return (value != term);
+                        case '<':
+                            return (value < term);
+                        case '>':
+                            return (value > term);
+                        case '<=':
+                            return (value <= term);
+                        case '>=':
+                            return (value >= term);
+                        case 'LIKE':
+                            return (value.toLowerCase().includes(term.toLowerCase()));
+                        case 'CONTAINS':
+                            return (value.toLowerCase().includes(term.toLowerCase()));
+                        case 'STARTSWITH':
+                            return (value.toLowerCase().indexOf(term.toLowerCase()) === 0);
+                        case 'NOT LIKE':
+                            return (!value.toLowerCase().includes(term.toLowerCase()));
+                        case 'DOES NOT CONTAIN':
+                            return (!value.toLowerCase().includes(term.toLowerCase()));
+                        case 'IN':
+                            return (term.toLowerCase().split(',').map((a) => a.trim()).includes(value.toLowerCase()));
+                        default:
+                            return false;
                         }
-                    })
-                })
+                    });
+                });
             });
-        }
+        };
 
         const entity = self.getEntity(className);
         const entityQueryMatch = conditionPass(entity, file);
@@ -1059,7 +1059,7 @@ SnProject.prototype.save = function (file) {
                 var subFolder = (entity.subDirPattern) ? _substituteField.call(self, entity.subDirPattern, file).replace(/^\/|\/$/g, '') : null;
                 if (subFolder) {
                     // append the subFolder structure to the path
-                    entityFileUUID = entityFileUUID.concat(subFolder.split(/\/|\\/))
+                    entityFileUUID = entityFileUUID.concat(subFolder.split(/\/|\\/));
                 }
 
                 if (entity.json) {
@@ -1074,7 +1074,7 @@ SnProject.prototype.save = function (file) {
                         delete jsonFile.____;
 
                     return add({
-                        id: `JSON`,
+                        id: 'JSON',
                         fileName,
                         fileUUID: entityJsonFileUUID,
                         body: JSON.stringify(flattenFile(jsonFile), null, 2),
@@ -1177,11 +1177,11 @@ SnProject.prototype.save = function (file) {
                         if (jsonFile[key]) {
                             const fileObject = fileObjectArray.find((fileObject) => {
                                 return (fileObject.id == `FIELD:${key}`);
-                            })
+                            });
                             if (fileObject)
                                 jsonFile[key] = {
                                     ____see: path.join.apply(null, fileObject.fileUUID)
-                                }
+                                };
                         }
                     });
                 }
@@ -1189,7 +1189,7 @@ SnProject.prototype.save = function (file) {
                 // sanitize all path segments
                 jsonFileUUID = jsonFileUUID.map((val) => sanitize(val));
                 return add({
-                    id: `JSON`,
+                    id: 'JSON',
                     fileName,
                     fileUUID: jsonFileUUID,
                     body: JSON.stringify(flattenFile(jsonFile), null, 2),
@@ -1258,7 +1258,7 @@ SnProject.prototype.save = function (file) {
 
             const filePath = path.join.apply(null, fileObject.fileUUID);
             const cachedField = branchObject.fields.find((field) => {
-                return (field.id == fileObject.id)
+                return (field.id == fileObject.id);
             });
 
             let fileNameChanged = false;
@@ -1286,7 +1286,7 @@ SnProject.prototype.save = function (file) {
                             return pfile.deleteEmptyDirUpwards(from);
                         }).catch((e) => {
                             console.warn('File rename failed', e);
-                        })
+                        });
                     });
                 }
 
@@ -1301,7 +1301,7 @@ SnProject.prototype.save = function (file) {
                 if (exists && !fileNameChanged && cachedField && cachedField.hash == fileObject.hash) {
 
                     // the file has not changed, return here
-                    console.log("\t\tfile has not changed, skip '%s'", filePath);
+                    console.log('\t\tfile has not changed, skip \'%s\'', filePath);
                     // update the branch information 
                     await self.db.updateAsync({ sysId: entityCache.sysId }, {
                         $set: {
@@ -1332,7 +1332,7 @@ SnProject.prototype.save = function (file) {
                         branchObject.fields.push(fieldObject);
                     }
 
-                    console.log("\t\tadd file '%s'", fieldFileOsPath);
+                    console.log('\t\tadd file \'%s\'', fieldFileOsPath);
                     await pfile.writeFileAsync(fieldFileOsPath, fileObject.body);
 
                     await self.db.updateAsync({ sysId: entityCache.sysId }, { $set: { [`branch.${self.config.branch}`]: branchObject } }, { upsert: true });

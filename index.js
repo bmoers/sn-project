@@ -370,7 +370,7 @@ SnProject.prototype.setup = function () {
         return fs.readFile(path.resolve(self.config.templateDir, 'package.json'), 'utf8').then(function (text) {
             var packageDefinition = JSON.parse(text);
             var packageName = self.config.appName.toLowerCase();
-            packageDefinition.name = '@'.concat(self.config.organization).concat('/').concat(packageName.replace(/\s+/g, '-').replace(/(?:^[\.|_])|[^a-z0-9\-\._~]/g, '').replace(/\-+/g, '-'));
+            packageDefinition.name = '@'.concat(self.config.organization).concat('/').concat(packageName.replace(/\s+/g, '-').replace(/(?:^[.|_])|[^a-z0-9\-._~]/g, '').replace(/-+/g, '-'));
             return packageDefinition;
         }).then(function (packageDefinition) {
             console.log('package.json created:', path.join(self.config.dir, 'package.json'));
@@ -647,7 +647,7 @@ SnProject.prototype.getEntityRequestParam = function (className) {
 
     if (entity.query) {
         var keyValueSplit = /\^OR|\^EQ|\^NQ|\^/,
-            fieldNameSplit = /\!=|\>|\>=|\<|\<=|=|IN|STARTSWITH|ENDSWITH|CONTAINS|DOESNOTCONTAIN|LIKE/;
+            fieldNameSplit = /!=|>|>=|<|<=|=|IN|STARTSWITH|ENDSWITH|CONTAINS|DOESNOTCONTAIN|LIKE/;
 
         // add all field names from the query to the elementValues array
         queryFieldNames = entity.query.split(keyValueSplit).map(function (keyValue) {
@@ -899,7 +899,7 @@ SnProject.prototype.save = function (file) {
                     } else if(fileSysId && fileSysId != sysId){
                         counter++;
                         //console.warn("there is already an object with the same name but different sys_id! Renaming current file");
-                        fileObject.fileUUID[last] = fileName.replace(/(\.[^\.]+)$/, '_' + counter + '$1');
+                        fileObject.fileUUID[last] = fileName.replace(/(\.[^.]+)$/, '_' + counter + '$1');
                         filePath = path.join.apply(null, fileObject.fileUUID);
                         //console.warn("\tto:", cacheKey);
                         return (counter < 500);
@@ -1522,7 +1522,7 @@ var _substituteField = function (fieldValue, substituteObject) {
 
                 if (alternative.indexOf('\'') === 0) {
                     // string alternative
-                    substituteString = substituteString.replace(wholeKey, alternative.replace(/\'/g, ''));
+                    substituteString = substituteString.replace(wholeKey, alternative.replace(/'/g, ''));
                     return true;
 
                 } else {

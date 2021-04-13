@@ -27,6 +27,6 @@ module.exports = {
             'error',
             'always'
         ],
-        "no-control-regex": 0
+        'no-control-regex': 0
     }
 };

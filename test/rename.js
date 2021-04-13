@@ -1,7 +1,7 @@
 const Git = require('../lib/git');
 
 
-const git = new Git({ dir: 'C:\\cicd-server\\repos\\test', quiet: false })
+const git = new Git({ dir: 'C:\\cicd-server\\repos\\test', quiet: false });
 
 git.switchToBranch('va-atf-collection-@8f392c88db052780432cfc600f9619c7');
 

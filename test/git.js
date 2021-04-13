@@ -4,7 +4,7 @@ const path = require('path');
 
 
 const root = 'C:\\cicd\\repos\\21c4ee7a-3ed2-4b0a-8a56-8a1837d3b598---5';
-const git = new Git({ dir: root, quiet: false })
+const git = new Git({ dir: root, quiet: false });
 
 git.init('no-build').then(() => {
 
@@ -12,8 +12,8 @@ git.init('no-build').then(() => {
     const filePath = path.resolve(root, fileName);
 
     return pf.writeFileAsync(filePath, 'hello').then(() => {
-        return git.add(filePath).then((out) => { console.log(out) })
-    })
+        return git.add(filePath).then((out) => { console.log(out); });
+    });
 
 
 });

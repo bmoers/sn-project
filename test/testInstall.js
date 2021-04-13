@@ -11,12 +11,12 @@ var project = new Snproject({
 Promise.try(() => {
     return project.install(false);
 }).then((m) => {
-    console.log('installed', m.log)
+    console.log('installed', m.log);
     return m;
 }).catch((e) => {
     console.log('ERROR', e);
 }).then(() => {
-    console.log("End")
+    console.log('End');
     return true;
 });
 

@@ -4,7 +4,7 @@ const Git = require('../lib/git');
 let git = new Git({
     quiet: true,
     dir: `${os.tmpdir()}/git-branchname-test`,
-    remoteUrl: 'git@github.com:bmoers/x_11413_cicd_test.git'
+    remoteUrl: 'git@github.com:bmoers/x_11413_cicd_test_2.git'
 });
 
 (async ()=>{
@@ -13,12 +13,14 @@ let git = new Git({
     await git.init();
     console.log('init done');
 
+    /*
     await git.switchToBranch('sample_branch_xxxx');
         
     await git.add('tmp.file');
     await git.commit('gula');
     await git.push('sample_branch_xxxx');
-    
+    */
+
     //await git.push('sample_branch_3');
     
     /*

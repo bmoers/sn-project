@@ -13,7 +13,7 @@
     "bluebird": "^3.7.2",
     "command-exists": "^1.2.9",
     "delete-empty": "2.0.0",
-    "fs-extra": "^9.1.0",
+    "fs-extra": "^10.0.0",
     "gulp-git": "^2.10.1",
     "nedb": "^1.8.0",
     "object-assign-deep": "^0.4.0",
@@ -25,12 +25,12 @@
     "lib": "lib"
   },
   "devDependencies": {
-    "dotenv": "^8.2.0",
-    "eslint": "^7.24.0",
-    "eslint-config-standard": "^16.0.2",
-    "eslint-plugin-import": "^2.22.1",
+    "dotenv": "^10.0.0",
+    "eslint": "^7.28.0",
+    "eslint-config-standard": "^16.0.3",
+    "eslint-plugin-import": "^2.23.4",
     "eslint-plugin-node": "^11.1.0",
-    "eslint-plugin-promise": "^4.3.1",
+    "eslint-plugin-promise": "^5.1.0",
     "fast-diff": "^1.2.0"
   },
   "repository": {
@@ -44,5 +44,9 @@
   "bugs": {
     "url": "https://github.com/bmoers/sn-project/issues"
   },
-  "homepage": "https://github.com/bmoers/sn-project#readme"
+  "homepage": "https://github.com/bmoers/sn-project#readme",
+  "engines": {
+    "node": ">=12",
+    "npm": ">=7.0.0"
+  }
 }

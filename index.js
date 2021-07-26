@@ -118,7 +118,7 @@ function SnProject(options, datastore) {
 
     self.cache = null;
     self.updateCache = async ({ fields }, sysId) => {
-        if(!self.cache)
+        if (!self.cache)
             return;
         if (!fields || !sysId)
             return;
@@ -149,11 +149,11 @@ function SnProject(options, datastore) {
     self.renameInCache = (from, to) => {
         if (!self.cache)
             return;
-        if(!from || !to)
+        if (!from || !to)
             return;
-        if(!self.cache[from])
+        if (!self.cache[from])
             return;
-        self.cache[to] = self.cache[from]; 
+        self.cache[to] = self.cache[from];
         delete self.cache[from];
     };
     self.getCache = async () => {
@@ -174,7 +174,7 @@ function SnProject(options, datastore) {
 
         self.cache = cache;
         console.log(`Cache :: refreshed for branch '${self.config.branch}'. Cache size: ${Object.keys(self.cache).length}`);
-        
+
         return self.cache;
     };
 
@@ -256,10 +256,18 @@ SnProject.prototype.build = function () {
     var spawn = require('child_process').spawn;
     var os = require('os');
 
+    /*
+        allow to set 'max-old-space-size' via 'CICD_BUILD_NODE_OPTIONS'.
+        e.g.: CICD_BUILD_NODE_OPTIONS=--max-old-space-size=768 (512 mb by default)
+        All allowed node_options: https://nodejs.org/api/cli.html#cli_node_options_options
+    */
     var childProcess = spawn((os.platform() === 'win32' ? 'npm.cmd' : 'npm'), ['run-script', 'build'], { // build
         cwd: self.config.dir,
         detached: false,
-        env: assign({}, process.env, { NO_UPDATE_NOTIFIER: 1 })
+        env: assign({}, process.env, {
+            NO_UPDATE_NOTIFIER: 1,
+            NODE_OPTIONS: process.env.CICD_BUILD_NODE_OPTIONS
+        })
     });
 
     return new Promise(function (resolve, reject) {
@@ -893,10 +901,10 @@ SnProject.prototype.save = function (file) {
 
                     const cache = await self.getCache();
                     const fileSysId = cache[filePath];
-                    if(!fileSysId){
+                    if (!fileSysId) {
                         await self.updateCache({ fields: [{ filePath }] }, sysId);
-                        
-                    } else if(fileSysId && fileSysId != sysId){
+
+                    } else if (fileSysId && fileSysId != sysId) {
                         counter++;
                         //console.warn("there is already an object with the same name but different sys_id! Renaming current file");
                         fileObject.fileUUID[last] = fileName.replace(/(\.[^.]+)$/, '_' + counter + '$1');
@@ -1262,7 +1270,7 @@ SnProject.prototype.save = function (file) {
             });
 
             let fileNameChanged = false;
-            
+
             return new Promise.try(() => { // ensure the file-name is unique
 
                 if (!cachedField) // file not in db yet
@@ -1336,7 +1344,7 @@ SnProject.prototype.save = function (file) {
                     await pfile.writeFileAsync(fieldFileOsPath, fileObject.body);
 
                     await self.db.updateAsync({ sysId: entityCache.sysId }, { $set: { [`branch.${self.config.branch}`]: branchObject } }, { upsert: true });
-                    
+
                     await self.updateCache(branchObject, entityCache.sysId);
                     // file modified
                     modified = true;

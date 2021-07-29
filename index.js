@@ -10,7 +10,7 @@ var sanitizeFileName = require('sanitize-filename'),
     crypto = require('crypto'),
     copy = require('recursive-copy');
 
-var Datastore = require('nedb'),
+var Datastore = require('@moers/nedb'),
     defaultFields = ['sys_scope.name', 'sys_scope.scope', 'sys_scope', 'sys_class_name', 'sys_created_by', 'sys_created_on', 'sys_customer_update', 'sys_id', 'sys_mod_count', 'sys_name', 'sys_package', 'sys_policy', 'sys_replace_on_upgrade', 'sys_updated_by', 'sys_updated_on', 'sys_update_name'];
 
 const sanitize = (value) => {
@@ -91,17 +91,17 @@ function SnProject(options, datastore) {
         console.log('Project Datastore: use local');
         self.config.dbFileName = path.join(self.config.dir, 'config', `${self.config.dbName}.db`);
 
-        const dataStore = new Datastore({
+        const localDataStore = new Datastore({
             filename: self.config.dbFileName,
             autoload: true
         });
 
-        dataStore.ensureIndex({ fieldName: 'branch' });
-        dataStore.ensureIndex({ filename: 'sysId' });
+        localDataStore.ensureIndex({ fieldName: 'branch' });
+        localDataStore.ensureIndex({ filename: 'sysId' });
 
-        Promise.promisifyAll(dataStore);
+        Promise.promisifyAll(localDataStore);
 
-        datastore.find({ sysId: { $exists: false } }, (err, records) => {
+        localDataStore.find({ sysId: { $exists: false } }, (err, records) => {
             if (err)
                 return console.log('nedb id update failed with ', err);
             if (!records.length)
@@ -109,11 +109,11 @@ function SnProject(options, datastore) {
             console.log(`NEDB id fix. creating sysId fields for ${records.length} records`);
             records.forEach((record) => {
                 // copy the _id (sysId) into the new field sysId
-                datastore.update({ _id: record._id }, { $set: { sysId: record._id } });
+                localDataStore.update({ _id: record._id }, { $set: { sysId: record._id } });
             });
 
         });
-        return dataStore;
+        return localDataStore;
     })();
 
     self.cache = null;
@@ -156,6 +156,9 @@ function SnProject(options, datastore) {
         self.cache[to] = self.cache[from];
         delete self.cache[from];
     };
+    /**
+     * @returns {Promise<Array>}
+     */
     self.getCache = async () => {
         if (self.cache)
             return self.cache;
@@ -868,12 +871,12 @@ SnProject.prototype.save = function (file) {
     const appName = file.____.appName;
     const scopeName = file.____.scopeName;
     const className = file.____.className;
-    const sysId = file.sys_id.value || file.sys_id;
+    const sysId = (file.sys_id.value || file.sys_id).toString();
 
     const updatedByField = file.sys_updated_by || file.sys_created_by || 'system';
     const updatedBy = file.____.updatedBy || updatedByField.display_value || updatedByField.value || updatedByField;
 
-    let updatedOn = file.____.updatedOn || (file.sys_updated_on) ? file.sys_updated_on.value || file.sys_updated_on : (file.sys_created_on) ? file.sys_created_on.value || file.sys_created_on : -1;
+    let updatedOn = file.____.updatedOn || ((file.sys_updated_on) ? file.sys_updated_on.value || file.sys_updated_on : (file.sys_created_on) ? file.sys_created_on.value || file.sys_created_on : -1);
     if (updatedOn) {
         file.____.updatedOn = updatedOn;
         updatedOn = new Date(updatedOn).getTime();

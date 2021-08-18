@@ -255,7 +255,10 @@ SnProject.prototype.install = function (silent) {
             });
 
         } catch (e) {
-            reject(e);
+            reject({
+                failed: true,
+                log: e.message || e
+            });
         }
     });
 
@@ -312,7 +315,10 @@ SnProject.prototype.build = function () {
             });
 
         } catch (e) {
-            reject(e);
+            reject({
+                failed: true,
+                log: e.message || e
+            });
         }
     });
 

@@ -217,40 +217,51 @@ SnProject.prototype.install = function (silent) {
 
     const args = [command, (silent) ? '--silent' : '', '--no-audit', '--no-optional'];
 
-    var childProcess = spawn((os.platform() === 'win32' ? 'npm.cmd' : 'npm'), args, {
-        cwd: self.config.dir,
-        detached: false,
-        env: assign({}, process.env, { NODE_ENV: 'development', NO_UPDATE_NOTIFIER: 1 })
-    });
-
     return new Promise(function (resolve, reject) {
+        try {
 
-        console.log('install node app in', self.config.dir, args);
-
-        var stdout = '';
-        var stderr = '';
-        childProcess.stdout.on('data', function (buff) {
-            stdout += buff.toString().replace(/\n+/, '\n');
-        });
-        childProcess.stderr.on('data', function (buff) {
-            stderr += buff.toString().replace(/\n+/, '\n');
-        });
-
-        childProcess.on('exit', function (code) {
-            console.log(`npm install process exited with code: ${code}`);
-            if (code > 0) {
-                return reject({
-                    failed: true,
-                    log: stdout.concat('\nERROR: ', stderr)
-                });
-            }
-            resolve({
-                failed: false,
-                log: stdout
+            var childProcess = spawn((os.platform() === 'win32' ? 'npm.cmd' : 'npm'), args, {
+                cwd: self.config.dir,
+                detached: false,
+                env: assign({}, process.env, { NODE_ENV: 'development', NO_UPDATE_NOTIFIER: 1 })
             });
-        });
 
+            childProcess.stdout.setEncoding('utf8');
+            childProcess.stderr.setEncoding('utf8');
+
+            console.log('install node app in', self.config.dir, args);
+
+            var stdout = '';
+            var stderr = '';
+            childProcess.stdout.on('data', function (data) {
+                stdout += data.replace(/\n+/, '\n');
+            });
+            childProcess.stderr.on('data', function (data) {
+                stderr += data.replace(/\n+/, '\n');
+            });
+
+            childProcess.on('exit', function (code) {
+                console.log(`npm install process exited with code: ${code}`);
+                if (code > 0) {
+                    return reject({
+                        failed: true,
+                        log: stdout.concat('\nERROR: ', stderr)
+                    });
+                }
+                resolve({
+                    failed: false,
+                    log: stdout
+                });
+            });
+
+        } catch (e) {
+            reject({
+                failed: true,
+                log: e.message || e
+            });
+        }
     });
+
 };
 
 
@@ -259,46 +270,56 @@ SnProject.prototype.build = function () {
     var spawn = require('child_process').spawn;
     var os = require('os');
 
-    /*
-        allow to set 'max-old-space-size' via 'CICD_BUILD_NODE_OPTIONS'.
-        e.g.: CICD_BUILD_NODE_OPTIONS=--max-old-space-size=768 (512 mb by default)
-        All allowed node_options: https://nodejs.org/api/cli.html#cli_node_options_options
-    */
-    var childProcess = spawn((os.platform() === 'win32' ? 'npm.cmd' : 'npm'), ['run-script', 'build'], { // build
-        cwd: self.config.dir,
-        detached: false,
-        env: assign({}, process.env, {
-            NO_UPDATE_NOTIFIER: 1,
-            NODE_OPTIONS: process.env.CICD_BUILD_NODE_OPTIONS
-        })
-    });
-
     return new Promise(function (resolve, reject) {
-
-        console.log('build and test from', self.config.dir);
-
-        var stdout = '';
-        var stderr = '';
-        childProcess.stdout.on('data', function (buff) {
-            stdout += buff.toString().replace(/\n+/, '\n');
-        });
-        childProcess.stderr.on('data', function (buff) {
-            stderr += buff.toString().replace(/\n+/, '\n');
-        });
-
-        childProcess.on('exit', function (code) {
-            console.log(`build process exited with code: ${code}`);
-            if (code > 0) {
-                return reject({
-                    failed: true,
-                    log: stdout.concat('\nERROR: ', stderr)
-                });
-            }
-            resolve({
-                failed: false,
-                log: stdout
+        try {
+            /*
+            allow to set 'max-old-space-size' via 'CICD_BUILD_NODE_OPTIONS'.
+            e.g.: CICD_BUILD_NODE_OPTIONS=--max-old-space-size=768 (512 mb by default)
+            All allowed node_options: https://nodejs.org/api/cli.html#cli_node_options_options
+            */
+            var childProcess = spawn((os.platform() === 'win32' ? 'npm.cmd' : 'npm'), ['run-script', 'build'], { // build
+                cwd: self.config.dir,
+                detached: false,
+                env: assign({}, process.env, {
+                    NO_UPDATE_NOTIFIER: 1,
+                    NODE_OPTIONS: process.env.CICD_BUILD_NODE_OPTIONS
+                })
             });
-        });
+
+            childProcess.stdout.setEncoding('utf8');
+            childProcess.stderr.setEncoding('utf8');
+
+            console.log('build and test from', self.config.dir);
+
+            var stdout = '';
+            var stderr = '';
+            childProcess.stdout.on('data', function (data) {
+                stdout += data.replace(/\n+/, '\n');
+            });
+            childProcess.stderr.on('data', function (data) {
+                stderr += data.replace(/\n+/, '\n');
+            });
+
+            childProcess.on('exit', function (code) {
+                console.log(`build process exited with code: ${code}`);
+                if (code > 0) {
+                    return reject({
+                        failed: true,
+                        log: stdout.concat('\nERROR: ', stderr)
+                    });
+                }
+                resolve({
+                    failed: false,
+                    log: stdout
+                });
+            });
+
+        } catch (e) {
+            reject({
+                failed: true,
+                log: e.message || e
+            });
+        }
     });
 
 };

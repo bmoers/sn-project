@@ -1,6 +1,6 @@
 {
   "name": "sn-project",
-  "version": "3.17.0",
+  "version": "3.17.1",
   "description": "Replicate records from Service-Now to local disk",
   "main": "index.js",
   "scripts": {

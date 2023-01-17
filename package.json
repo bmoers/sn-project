@@ -14,23 +14,23 @@
     "bluebird": "^3.7.2",
     "command-exists": "^1.2.9",
     "delete-empty": "2.0.0",
-    "fs-extra": "^10.0.0",
+    "fs-extra": "^10.1.0",
     "gulp-git": "^2.10.1",
     "object-assign-deep": "^0.4.0",
-    "recursive-copy": "^2.0.11",
+    "recursive-copy": "^2.0.14",
     "sanitize-filename": "^1.6.3",
-    "tmp-promise": "^3.0.2"
+    "tmp-promise": "^3.0.3"
   },
   "directories": {
     "lib": "lib"
   },
   "devDependencies": {
     "dotenv": "^10.0.0",
-    "eslint": "^7.28.0",
+    "eslint": "^7.32.0",
     "eslint-config-standard": "^16.0.3",
-    "eslint-plugin-import": "^2.23.4",
+    "eslint-plugin-import": "^2.27.5",
     "eslint-plugin-node": "^11.1.0",
-    "eslint-plugin-promise": "^5.1.0",
+    "eslint-plugin-promise": "^5.2.0",
     "fast-diff": "^1.2.0"
   },
   "repository": {
